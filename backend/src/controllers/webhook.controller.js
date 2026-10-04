@@ -6,9 +6,6 @@ const EnvironmentMode = {
   PRODUCTION: "production",
 };
 
-/**
- * Get Paykar webhook secret based on environment
- */
 const getSecretForEnvironment = (environment) => {
   if (environment === EnvironmentMode.SANDBOX) {
     return process.env.PAYKAR_TEST_WEBHOOK_SECRET;
@@ -21,7 +18,7 @@ const verifySignature = (rawBody, signature, secret) => {
     return false;
   }
 
-  const expectedSignature = "sha256=" + crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+  const expectedSignature = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
   const expectedBuffer = Buffer.from(expectedSignature, "utf8");
   const receivedBuffer = Buffer.from(signature, "utf8");
 
@@ -32,12 +29,18 @@ const verifySignature = (rawBody, signature, secret) => {
   return crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
 };
 
-
 export const paykarWebhook = async (req, res) => {
   try {
 
     const environment = req.headers["x-environment"] || EnvironmentMode.PRODUCTION;
+
     const signature = req.headers["x-signature"];
+
+    console.log("=================================");
+    console.log("PAYKAR WEBHOOK RECEIVED");
+    console.log("Environment:", environment);
+    console.log("Signature received:", !!signature);
+    console.log("=================================");
 
     if (environment !== EnvironmentMode.SANDBOX && environment !== EnvironmentMode.PRODUCTION) {
       return res.status(400).json({
@@ -60,15 +63,16 @@ export const paykarWebhook = async (req, res) => {
 
     if (!isValidSignature) {
       console.warn("Paykar webhook signature verification failed", {
-        webhookId,
         environment,
       });
+
       return res.status(401).json({
         success: false,
         error: "Invalid signature",
       });
     }
 
+    console.log("Paykar webhook signature verified successfully");
 
     const payload = req.body;
 
@@ -82,6 +86,7 @@ export const paykarWebhook = async (req, res) => {
 
     if (!refTrx) {
       console.error("Paykar webhook missing ref_trx");
+
       return res.status(400).json({
         success: false,
         error: "ref_trx is required",
@@ -103,33 +108,25 @@ export const paykarWebhook = async (req, res) => {
       });
     }
 
-
-    if (webhookId && payment.paykarWebhookId === webhookId) {
-      console.log("Duplicate Paykar webhook:", webhookId);
-      return res.status(200).json({
-        success: true,
-        status: "already_processed",
-      });
-    }
-
-
     let paymentStatus = "PENDING";
     let paidAt = payment.paidAt;
 
     if (webhookStatus === "completed" || webhookStatus === "success") {
       paymentStatus = "SUCCESS";
-
       if (!paidAt) {
         paidAt = new Date();
       }
-    } else if (webhookStatus === "failed" || webhookStatus === "failure") {
-      paymentStatus = "FAILED";
-    } else if (webhookStatus === "cancelled" || webhookStatus === "canceled") {
-      paymentStatus = "CANCELLED";
-    } else if (webhookStatus === "expired") {
-      paymentStatus = "EXPIRED";
     }
 
+    else if (webhookStatus === "failed" || webhookStatus === "failure") {
+      paymentStatus = "FAILED";
+    }
+    else if (webhookStatus === "cancelled" || webhookStatus === "canceled") {
+      paymentStatus = "CANCELLED";
+    }
+    else if (webhookStatus === "expired") {
+      paymentStatus = "EXPIRED";
+    }
 
     await payment.update({
       paykarTransactionId: payment.paykarTransactionId || webhookData?.trx_id || null,
@@ -139,12 +136,10 @@ export const paykarWebhook = async (req, res) => {
       webhookReceived: true,
       webhookReceivedAt: new Date(),
       webhookPayload: payload,
-      paykarWebhookId: webhookId || null,
       webhookEnvironment: environment,
       webhookStatus: webhookStatus || null,
       failureReason: paymentStatus === "FAILED" ? message || "Payment failed" : null,
     });
-
 
     if (paymentStatus === "SUCCESS") {
       console.log("=================================");
@@ -152,8 +147,11 @@ export const paykarWebhook = async (req, res) => {
       console.log("Payment ID:", payment.id);
       console.log("Order ID:", payment.orderId);
       console.log("Paykar ref_trx:", refTrx);
+      console.log("Paykar transaction:", webhookData?.trx_id);
       console.log("Amount:", webhookData?.amount);
       console.log("Currency:", webhookData?.currency_code);
+      console.log("Payment Method:", webhookData?.payment_method);
+      console.log("UTR:", webhookData?.utr);
       console.log("=================================");
     }
 
@@ -164,10 +162,7 @@ export const paykarWebhook = async (req, res) => {
       timestamp,
     });
 
-    return res.status(200).json({
-      success: true,
-      status: "processed",
-    });
+    return res.status(200).json({ success: true, status: "processed" });
 
   } catch (error) {
     console.error("Paykar webhook processing error:", error);
