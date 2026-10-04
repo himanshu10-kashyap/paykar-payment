@@ -18,7 +18,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            cd /home/ubuntu/bd-calling-crm/backend
+            cd /home/ubuntu/paykar-payment/backend
 
             git fetch origin
             git checkout main
