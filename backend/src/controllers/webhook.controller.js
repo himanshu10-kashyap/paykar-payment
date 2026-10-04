@@ -13,14 +13,15 @@ const getSecretForEnvironment = (environment) => {
   return process.env.PAYKAR_WEBHOOK_SECRET;
 };
 
-const verifySignature = (rawBody, signature, secret) => {
-  if (!rawBody || !signature || !secret) {
+const verifySignature = (payload, signature, secret) => {
+  if (!payload || !signature || !secret) {
     return false;
   }
 
-  const expectedSignature = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+  const expectedSignature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  const receivedSignature = signature.replace(/^sha256=/i, "").trim();
   const expectedBuffer = Buffer.from(expectedSignature, "utf8");
-  const receivedBuffer = Buffer.from(signature, "utf8");
+  const receivedBuffer = Buffer.from(receivedSignature, "utf8");
 
   if (expectedBuffer.length !== receivedBuffer.length) {
     return false;
@@ -59,7 +60,7 @@ export const paykarWebhook = async (req, res) => {
       });
     }
 
-    const isValidSignature = verifySignature(req.rawBody, signature, secret);
+    const isValidSignature = verifySignature(JSON.stringify(req.body), signature, secret);
 
     if (!isValidSignature) {
       console.warn("Paykar webhook signature verification failed", {
