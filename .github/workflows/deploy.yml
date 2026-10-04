@@ -1,0 +1,34 @@
+name: 🚀 Deploy to EC2 on Push
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy via SSH
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Connect to EC2 and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            cd /home/ubuntu/bd-calling-crm/backend
+
+            git fetch origin
+            git checkout main
+            git pull origin main
+
+            npm install
+
+            # Restart app with PM2
+            pm2 delete bd-calling-crm-backend || true
+            pm2 start server.js --name bd-calling-crm-backend
+
+            # Save PM2 process
+            pm2 save
