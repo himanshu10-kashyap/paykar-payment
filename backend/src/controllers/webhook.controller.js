@@ -18,41 +18,9 @@ const verifySignature = (payload, signature, secret) => {
     return false;
   }
 
-  const expectedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(payload)
-    .digest("hex");
+  const expectedSignature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
 
-  const receivedSignature = signature
-    .replace(/^sha256=/i, "")
-    .trim();
-
-  console.log("=================================");
-  console.log("PAYKAR SIGNATURE DEBUG");
-
-  console.log(
-    "Received signature:",
-    receivedSignature
-      ? `${receivedSignature.slice(0, 8)}...${receivedSignature.slice(-8)}`
-      : "MISSING"
-  );
-
-  console.log(
-    "Expected signature:",
-    expectedSignature
-      ? `${expectedSignature.slice(0, 8)}...${expectedSignature.slice(-8)}`
-      : "EMPTY"
-  );
-
-  console.log("Webhook secret exists:", !!secret);
-  console.log("Webhook secret length:", secret?.length || 0);
-
-  console.log(
-    "Signature match:",
-    receivedSignature === expectedSignature
-  );
-
-  console.log("=================================");
+  const receivedSignature = signature.replace(/^sha256=/i, "").trim();
 
   const expectedBuffer = Buffer.from(expectedSignature, "utf8");
   const receivedBuffer = Buffer.from(receivedSignature, "utf8");
@@ -70,16 +38,9 @@ const verifySignature = (payload, signature, secret) => {
 export const paykarWebhook = async (req, res) => {
   try {
 
-    // const environment = req.headers["x-environment"] || EnvironmentMode.PRODUCTION;
     const environment = EnvironmentMode.PRODUCTION;
 
     const signature = req.headers["x-signature"];
-
-    console.log("=================================");
-    console.log("PAYKAR WEBHOOK RECEIVED");
-    console.log("Environment:", environment);
-    console.log("Signature received:", !!signature);
-    console.log("=================================");
 
     if (environment !== EnvironmentMode.SANDBOX && environment !== EnvironmentMode.PRODUCTION) {
       return res.status(400).json({
@@ -111,11 +72,7 @@ export const paykarWebhook = async (req, res) => {
       });
     }
 
-    console.log("Paykar webhook signature verified successfully");
-
     const payload = req.body;
-
-    console.log("Paykar webhook payload:", JSON.stringify(payload, null, 2));
 
     const webhookData = payload?.data || {};
     const refTrx = webhookData?.ref_trx;
@@ -124,8 +81,6 @@ export const paykarWebhook = async (req, res) => {
     const timestamp = payload?.timestamp;
 
     if (!refTrx) {
-      console.error("Paykar webhook missing ref_trx");
-
       return res.status(400).json({
         success: false,
         error: "ref_trx is required",
@@ -139,7 +94,6 @@ export const paykarWebhook = async (req, res) => {
     });
 
     if (!payment) {
-      console.warn("Payment not found for Paykar ref_trx:", refTrx);
       return res.status(200).json({
         success: false,
         status: "ignored",
@@ -181,25 +135,7 @@ export const paykarWebhook = async (req, res) => {
     });
 
     if (paymentStatus === "SUCCESS") {
-      console.log("=================================");
-      console.log("PAYMENT SUCCESSFUL");
-      console.log("Payment ID:", payment.id);
-      console.log("Order ID:", payment.orderId);
-      console.log("Paykar ref_trx:", refTrx);
-      console.log("Paykar transaction:", webhookData?.trx_id);
-      console.log("Amount:", webhookData?.amount);
-      console.log("Currency:", webhookData?.currency_code);
-      console.log("Payment Method:", webhookData?.payment_method);
-      console.log("UTR:", webhookData?.utr);
-      console.log("=================================");
     }
-
-    console.log("Paykar webhook processed:", {
-      refTrx,
-      status: webhookStatus,
-      environment,
-      timestamp,
-    });
 
     return res.status(200).json({ success: true, status: "processed" });
 
