@@ -34,8 +34,12 @@ export const initiatePayment = async (req, res) => {
       allowPaymentMethods,
       idempotencyKey,
       metadata,
-      vendorSlug
+      vendorSlug,
     } = req.body;
+
+    // ------------------------------------------------
+    // Validate required fields
+    // ------------------------------------------------
 
     if (!orderId) {
       return res.status(400).json({
@@ -94,232 +98,544 @@ export const initiatePayment = async (req, res) => {
     }
 
     if (!vendorSlug) {
-
       return res.status(400).json({
         success: false,
         message: "vendorSlug is required",
       });
-
     }
 
-    const vendor =
-      await Vendor.findOne({
-        where: {
-          slug: vendorSlug,
-          isActive: true,
-        },
-      });
+
+    // ------------------------------------------------
+    // Find active vendor
+    // ------------------------------------------------
+
+    const vendor = await Vendor.findOne({
+      where: {
+        slug: vendorSlug,
+        isActive: true,
+      },
+    });
 
 
     if (!vendor) {
-
       return res.status(404).json({
         success: false,
         message:
           "Payment vendor not found or inactive",
       });
-
     }
 
-    const webhookUrl = process.env.PAYKAR_WEBHOOK_URL;
+
+    // ------------------------------------------------
+    // Debug vendor
+    // ------------------------------------------------
+
+    console.log(
+      "Payment vendor resolved:",
+      {
+        vendorId: vendor.id,
+        vendorSlug: vendor.slug,
+        companyName: vendor.companyName,
+        isActive: vendor.isActive,
+      }
+    );
+
+
+    // ------------------------------------------------
+    // Make sure vendor ID exists
+    // ------------------------------------------------
+
+    if (!vendor.id) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Vendor ID could not be resolved",
+      });
+    }
+
+
+    // ------------------------------------------------
+    // Webhook URL
+    // ------------------------------------------------
+
+    const webhookUrl =
+      process.env.PAYKAR_WEBHOOK_URL;
+
 
     if (!webhookUrl) {
       return res.status(500).json({
         success: false,
-        message: "PAYKAR_WEBHOOK_URL is not configured",
+        message:
+          "PAYKAR_WEBHOOK_URL is not configured",
       });
     }
 
 
+    // ------------------------------------------------
+    // Idempotency check
+    // ------------------------------------------------
+
     if (idempotencyKey) {
-      const existingPayment = await Payment.findOne({
+
+      const existingPayment =
+        await Payment.findOne({
+          where: {
+            idempotencyKey,
+          },
+        });
+
+
+      if (existingPayment) {
+
+        return res.status(200).json({
+          success: true,
+          message:
+            "Payment already initiated",
+          data: existingPayment,
+        });
+
+      }
+
+    }
+
+
+    // ------------------------------------------------
+    // Order check
+    // ------------------------------------------------
+
+    const existingOrder =
+      await Payment.findOne({
         where: {
-          idempotencyKey,
+          orderId,
         },
       });
 
-      if (existingPayment) {
-        return res.status(200).json({
-          success: true,
-          message: "Payment already initiated",
-          data: existingPayment,
-        });
-      }
-    }
-
-    const existingOrder = await Payment.findOne({
-      where: {
-        orderId,
-      },
-    });
 
     if (existingOrder) {
+
       return res.status(409).json({
         success: false,
-        message: "Payment already exists for this order",
+        message:
+          "Payment already exists for this order",
         data: existingOrder,
       });
+
     }
+
+
+    // ------------------------------------------------
+    // Reference
+    // ------------------------------------------------
 
     const refTrx = orderId;
 
-    const payment = await Payment.create({
-      orderId,
-      vendorId: vendor.id,
-      vendorSlug: vendor.slug,
-      merchantReference: refTrx,
-      idempotencyKey: idempotencyKey || null,
-      customerName,
-      customerEmail,
-      customerMobile,
-      amount,
-      currency,
-      environment: PAYKAR_ENVIRONMENT,
-      status: "CREATED",
-      successRedirect,
-      failureUrl,
-      cancelRedirect,
-      ipnUrl: webhookUrl,
-      metadata: metadata || null,
-    });
+
+    // ------------------------------------------------
+    // Create Payment
+    // ------------------------------------------------
+
+    let payment;
+
+    try {
+
+      payment = await Payment.create({
+
+        orderId,
+
+        /*
+         * IMPORTANT
+         *
+         * This must exist in vendors.id
+         */
+        vendorId: vendor.id,
+
+        vendorSlug: vendor.slug,
+
+        merchantReference: refTrx,
+
+        idempotencyKey:
+          idempotencyKey || null,
+
+        customerName,
+
+        customerEmail,
+
+        customerMobile,
+
+        amount,
+
+        currency,
+
+        environment:
+          PAYKAR_ENVIRONMENT,
+
+        status: "CREATED",
+
+        successRedirect,
+
+        failureUrl,
+
+        cancelRedirect,
+
+        ipnUrl: webhookUrl,
+
+        metadata:
+          metadata || null,
+
+      });
+
+    } catch (dbError) {
+
+      console.error(
+        "Payment database creation error:",
+        dbError
+      );
+
+
+      // Foreign key error
+      if (
+        dbError?.name ===
+          "SequelizeForeignKeyConstraintError" ||
+        dbError?.parent?.code ===
+          "ER_NO_REFERENCED_ROW_2"
+      ) {
+
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid vendor. Vendor ID does not exist in the vendors table.",
+          vendor: {
+            id: vendor.id,
+            slug: vendor.slug,
+          },
+        });
+
+      }
+
+
+      throw dbError;
+
+    }
+
+
+    // ------------------------------------------------
+    // Paykar payment payload
+    // ------------------------------------------------
 
     const paymentData = {
-      payment_amount: Number(amount),
-      currency_code: currency,
-      ref_trx: refTrx,
-      description: description || `Payment for order ${orderId}`,
 
-      success_redirect: successRedirect,
-      failure_url: failureUrl,
-      cancel_redirect: cancelRedirect,
-      ipn_url: webhookUrl,
+      payment_amount:
+        Number(amount),
 
-      customer_name: customerName,
-      customer_email: customerEmail,
-      customer_mobile: customerMobile,
+      currency_code:
+        currency,
 
-      allow_payment_methods: "sabpaisa"
+      ref_trx:
+        refTrx,
+
+      description:
+        description ||
+        `Payment for order ${orderId}`,
+
+      success_redirect:
+        successRedirect,
+
+      failure_url:
+        failureUrl,
+
+      cancel_redirect:
+        cancelRedirect,
+
+      ipn_url:
+        webhookUrl,
+
+      customer_name:
+        customerName,
+
+      customer_email:
+        customerEmail,
+
+      customer_mobile:
+        customerMobile,
+
+      allow_payment_methods:
+        allowPaymentMethods ||
+        "sabpaisa",
     };
+
+
+    // ------------------------------------------------
+    // Initiate Paykar
+    // ------------------------------------------------
 
     let response;
 
+
     try {
-      response = await axios.post(
-        `${PAYKAR_BASE_URL}/initiate-payment`,
-        paymentData,
-        {
-          headers: getPaykarHeaders(),
-          timeout: 30000,
-          validateStatus: () => true,
-        }
-      );
+
+      response =
+        await axios.post(
+          `${PAYKAR_BASE_URL}/initiate-payment`,
+          paymentData,
+          {
+            headers:
+              getPaykarHeaders(),
+
+            timeout: 30000,
+
+            validateStatus:
+              () => true,
+          }
+        );
 
     } catch (error) {
-      const errorData = error.response?.data || { error: error.message };
+
+      const errorData =
+        error.response?.data || {
+          error: error.message,
+        };
+
 
       await payment.update({
+
         status: "FAILED",
+
         failureReason:
           typeof errorData === "string"
             ? errorData
             : errorData?.error ||
-            errorData?.message ||
-            error.message ||
-            "Paykar payment initiation failed",
+              errorData?.message ||
+              error.message ||
+              "Paykar payment initiation failed",
+
         initiateResponse:
           errorData,
+
       });
 
 
-      return res.status(error.response?.status || 500).json({
+      return res.status(
+        error.response?.status || 500
+      ).json({
+
         success: false,
+
         message:
           typeof errorData === "string"
             ? errorData
             : errorData?.error ||
-            errorData?.message ||
-            "Paykar payment initiation failed",
+              errorData?.message ||
+              "Paykar payment initiation failed",
 
-        data: errorData,
+        data:
+          errorData,
+
       });
+
     }
 
-    if (response.status < 200 || response.status >= 300) {
 
-      const errorData = response.data;
+    // ------------------------------------------------
+    // Paykar HTTP error
+    // ------------------------------------------------
+
+    if (
+      response.status < 200 ||
+      response.status >= 300
+    ) {
+
+      const errorData =
+        response.data;
+
+
       const failureReason =
         typeof errorData === "string"
           ? errorData
           : errorData?.error ||
-          errorData?.message ||
-          `Paykar returned HTTP ${response.status}`;
+            errorData?.message ||
+            `Paykar returned HTTP ${response.status}`;
+
 
       await payment.update({
+
         status: "FAILED",
+
         failureReason,
-        initiateResponse: errorData,
+
+        initiateResponse:
+          errorData,
+
       });
 
-      return res.status(response.status).json({
+
+      return res.status(
+        response.status
+      ).json({
+
         success: false,
-        message: "Paykar payment initiation failed",
-        data: errorData,
+
+        message:
+          "Paykar payment initiation failed",
+
+        data:
+          errorData,
+
       });
+
     }
 
-    const paykarResponse = response.data;
 
-    const paykarInfo = paykarResponse?.info || {};
+    // ------------------------------------------------
+    // Paykar response
+    // ------------------------------------------------
 
-    const paymentUrl = paykarResponse?.payment_url || null;
+    const paykarResponse =
+      response.data;
+
+
+    const paykarInfo =
+      paykarResponse?.info || {};
+
+
+    const paymentUrl =
+      paykarResponse?.payment_url ||
+      null;
+
+
+    // ------------------------------------------------
+    // Payment URL missing
+    // ------------------------------------------------
 
     if (!paymentUrl) {
+
       await payment.update({
+
         status: "FAILED",
-        paymentStatus: paykarResponse?.status || "FAILED",
-        initiateResponse: paykarResponse,
-        failureReason: "Paykar did not return payment_url",
+
+        paymentStatus:
+          paykarResponse?.status ||
+          "FAILED",
+
+        initiateResponse:
+          paykarResponse,
+
+        failureReason:
+          "Paykar did not return payment_url",
+
       });
 
 
       return res.status(502).json({
+
         success: false,
-        message: "Paykar did not return payment URL",
-        data: paykarResponse,
+
+        message:
+          "Paykar did not return payment URL",
+
+        data:
+          paykarResponse,
+
       });
+
     }
 
+
+    // ------------------------------------------------
+    // Update Payment
+    // ------------------------------------------------
+
     await payment.update({
+
       status: "INITIATED",
-      paymentStatus: paykarResponse?.status || "INITIATED",
-      checkoutUrl: paymentUrl,
-      paykarReference: paykarInfo?.ref_trx || refTrx,
-      merchantReference: paykarInfo?.ref_trx || refTrx,
-      initiateResponse: paykarResponse,
-      failureReason: null,
+
+      paymentStatus:
+        paykarResponse?.status ||
+        "INITIATED",
+
+      checkoutUrl:
+        paymentUrl,
+
+      paykarReference:
+        paykarInfo?.ref_trx ||
+        refTrx,
+
+      merchantReference:
+        paykarInfo?.ref_trx ||
+        refTrx,
+
+      initiateResponse:
+        paykarResponse,
+
+      failureReason:
+        null,
+
     });
+
+
+    // ------------------------------------------------
+    // Response
+    // ------------------------------------------------
 
     return res.status(200).json({
-      success: true,
-      message: "Payment initiated successfully",
-      data: {
-        paymentId: payment.id,
-        orderId: payment.orderId,
-        ref_trx: paykarInfo?.ref_trx || refTrx,
-        payment_url: paymentUrl,
-        status: payment.status,
-        checkoutUrl: payment.checkoutUrl,
-      },
-      paykarResponse,
-    });
 
+      success: true,
+
+      message:
+        "Payment initiated successfully",
+
+      data: {
+
+        paymentId:
+          payment.id,
+
+        orderId:
+          payment.orderId,
+
+        vendorId:
+          payment.vendorId,
+
+        vendorSlug:
+          payment.vendorSlug,
+
+        ref_trx:
+          paykarInfo?.ref_trx ||
+          refTrx,
+
+        payment_url:
+          paymentUrl,
+
+        status:
+          payment.status,
+
+        checkoutUrl:
+          payment.checkoutUrl,
+
+      },
+
+      paykarResponse,
+
+    });
 
   } catch (error) {
+
+    console.error(
+      "Initiate payment error:",
+      error
+    );
+
+
     return res.status(500).json({
+
       success: false,
-      message: "Internal server error",
-      error: error.message,
+
+      message:
+        "Internal server error",
+
+      error:
+        error.message,
+
     });
+
   }
 };
 
