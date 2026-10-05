@@ -18,42 +18,42 @@ const verifySignature = (payload, signature, secret) => {
     return false;
   }
 
-  const expectedSignature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
-  const receivedSignature = signature.replace(/^sha256=/i, "").trim();
+  const expectedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(payload)
+    .digest("hex");
+
+  const receivedSignature = signature
+    .replace(/^sha256=/i, "")
+    .trim();
+
   console.log("=================================");
-console.log("PAYKAR SIGNATURE DEBUG");
-console.log("Environment:", environment);
+  console.log("PAYKAR SIGNATURE DEBUG");
 
-console.log(
-  "Received signature:",
-  receivedSignature
-    ? `${receivedSignature.slice(0, 8)}...${receivedSignature.slice(-8)}`
-    : "MISSING"
-);
+  console.log(
+    "Received signature:",
+    receivedSignature
+      ? `${receivedSignature.slice(0, 8)}...${receivedSignature.slice(-8)}`
+      : "MISSING"
+  );
 
-console.log(
-  "Expected signature:",
-  expectedSignature
-    ? `${expectedSignature.slice(0, 8)}...${expectedSignature.slice(-8)}`
-    : "EMPTY"
-);
+  console.log(
+    "Expected signature:",
+    expectedSignature
+      ? `${expectedSignature.slice(0, 8)}...${expectedSignature.slice(-8)}`
+      : "EMPTY"
+  );
 
-console.log(
-  "Webhook secret exists:",
-  !!secret
-);
+  console.log("Webhook secret exists:", !!secret);
+  console.log("Webhook secret length:", secret?.length || 0);
 
-console.log(
-  "Webhook secret length:",
-  secret?.length || 0
-);
+  console.log(
+    "Signature match:",
+    receivedSignature === expectedSignature
+  );
 
-console.log(
-  "Signature match:",
-  receivedSignature === expectedSignature
-);
+  console.log("=================================");
 
-console.log("=================================");
   const expectedBuffer = Buffer.from(expectedSignature, "utf8");
   const receivedBuffer = Buffer.from(receivedSignature, "utf8");
 
@@ -61,13 +61,17 @@ console.log("=================================");
     return false;
   }
 
-  return crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
+  return crypto.timingSafeEqual(
+    expectedBuffer,
+    receivedBuffer
+  );
 };
 
 export const paykarWebhook = async (req, res) => {
   try {
 
-    const environment = req.headers["x-environment"] || EnvironmentMode.PRODUCTION;
+    // const environment = req.headers["x-environment"] || EnvironmentMode.PRODUCTION;
+    const environment = EnvironmentMode.PRODUCTION;
 
     const signature = req.headers["x-signature"];
 
@@ -94,7 +98,7 @@ export const paykarWebhook = async (req, res) => {
       });
     }
 
-    const isValidSignature = verifySignature(JSON.stringify(req.body), signature, secret);
+    const isValidSignature = verifySignature(req.rawBody, signature, secret);
 
     if (!isValidSignature) {
       console.warn("Paykar webhook signature verification failed", {
