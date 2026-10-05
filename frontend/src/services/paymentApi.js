@@ -1,7 +1,10 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://paykar.api.dummydoma.in";
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://paykar.api.dummydoma.in/api";
 
-
+/**
+ * Generate customer
+ */
 export const generateCustomer = async () => {
   const response = await fetch(
     `${API_BASE_URL}/payments/generate-customer`,
@@ -13,41 +16,16 @@ export const generateCustomer = async () => {
     }
   );
 
-
   const data = await response.json();
-
 
   if (!response.ok || !data.success) {
     throw new Error(
-      data.message ||
+      data?.message ||
       "Failed to generate customer"
     );
   }
 
-
   return data.data;
-};
-
-
-/**
- * Generate unique order ID
- */
-const generateOrderId = () => {
-  return `ORDER_${Date.now()}_${Math.random()
-    .toString(36)
-    .substring(2, 8)
-    .toUpperCase()}`;
-};
-
-
-/**
- * Generate idempotency key
- */
-const generateIdempotencyKey = () => {
-  return `PAY_${Date.now()}_${Math.random()
-    .toString(36)
-    .substring(2, 10)
-    .toUpperCase()}`;
 };
 
 
@@ -60,11 +38,16 @@ export const initiatePayment = async ({
 }) => {
 
   const orderId =
-    generateOrderId();
+    `ORDER_${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase()}`;
 
   const idempotencyKey =
-    generateIdempotencyKey();
-
+    `PAY_${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2, 10)
+      .toUpperCase()}`;
 
   const response = await fetch(
     `${API_BASE_URL}/payments/initiate`,
@@ -90,7 +73,6 @@ export const initiatePayment = async ({
 
         amount: Number(amount),
 
-        // IMPORTANT
         currency: "INR",
 
         description:
@@ -105,29 +87,63 @@ export const initiatePayment = async ({
         cancelRedirect:
           `${window.location.origin}/payment/cancelled`,
 
-        ipnUrl:
-          `${window.location.origin}/api/webhooks/paykar`,
-
         idempotencyKey,
       }),
     }
   );
 
-
   const data =
     await response.json();
-
 
   if (
     !response.ok ||
     !data.success
   ) {
     throw new Error(
-      data.message ||
+      data?.message ||
       "Payment initiation failed"
     );
   }
 
+  return data;
+};
+
+
+/**
+ * Verify Paykar payment
+ */
+export const verifyPayment = async (
+  trxId
+) => {
+
+  if (!trxId) {
+    throw new Error(
+      "Transaction ID is required."
+    );
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/payments/verify/${encodeURIComponent(
+      trxId
+    )}`,
+    {
+      method: "GET",
+
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
+
+  const data =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      "Payment verification failed."
+    );
+  }
 
   return data;
 };

@@ -473,3 +473,286 @@ body {
   }
 
 }
+
+/* =========================================
+   PAYMENT VERIFICATION
+========================================= */
+
+.verification-container {
+  min-height: 280px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  text-align: center;
+
+  gap: 12px;
+}
+
+
+.verification-container h2 {
+  margin: 8px 0 0;
+
+  color: #1e293b;
+
+  font-size: 24px;
+
+  font-weight: 750;
+}
+
+
+.verification-container p {
+  margin: 0;
+
+  color: #64748b;
+
+  font-size: 14px;
+}
+
+
+/* =========================================
+   RESULT
+========================================= */
+
+.payment-result {
+  text-align: center;
+
+  padding: 10px 0;
+}
+
+
+.payment-result h2 {
+  margin: 18px 0 10px;
+
+  color: #1e293b;
+
+  font-size: 27px;
+
+  font-weight: 750;
+}
+
+
+.payment-result p {
+  margin: 0 0 25px;
+
+  color: #64748b;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+
+/* =========================================
+   SUCCESS ICON
+========================================= */
+
+.success-icon {
+  width: 76px;
+
+  height: 76px;
+
+  margin: 0 auto;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #16a34a;
+
+  color: #ffffff;
+
+  font-size: 43px;
+
+  font-weight: 700;
+
+  box-shadow:
+    0 10px 25px
+    rgba(22, 163, 74, 0.22);
+}
+
+
+/* =========================================
+   FAILED ICON
+========================================= */
+
+.failed-icon {
+  width: 76px;
+
+  height: 76px;
+
+  margin: 0 auto;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #dc2626;
+
+  color: #ffffff;
+
+  font-size: 42px;
+
+  font-weight: 700;
+
+  box-shadow:
+    0 10px 25px
+    rgba(220, 38, 38, 0.20);
+}
+
+
+/* =========================================
+   CANCELLED ICON
+========================================= */
+
+.cancelled-icon {
+  width: 76px;
+
+  height: 76px;
+
+  margin: 0 auto;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #f59e0b;
+
+  color: #ffffff;
+
+  font-size: 42px;
+
+  font-weight: 700;
+
+  box-shadow:
+    0 10px 25px
+    rgba(245, 158, 11, 0.20);
+}
+
+
+/* =========================================
+   TRANSACTION DETAILS
+========================================= */
+
+.transaction-details {
+  width: 100%;
+
+  margin-top: 24px;
+
+  overflow: hidden;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 14px;
+
+  background: #ffffff;
+
+  text-align: left;
+}
+
+
+.transaction-row {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 14px 16px;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+
+.transaction-row:last-child {
+  border-bottom: none;
+}
+
+
+.transaction-row span {
+  color: #64748b;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+
+.transaction-row strong {
+  max-width: 65%;
+
+  color: #1e293b;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  text-align: right;
+
+  word-break: break-word;
+}
+
+
+/* =========================================
+   STATUS
+========================================= */
+
+.verified-status {
+  color: #16a34a !important;
+}
+
+
+.failed-status {
+  color: #dc2626 !important;
+}
+
+
+.cancelled-status {
+  color: #d97706 !important;
+}
+
+
+/* =========================================
+   MOBILE RESULT
+========================================= */
+
+@media (
+  max-width: 520px
+) {
+
+  .payment-result h2 {
+    font-size: 24px;
+  }
+
+
+  .transaction-row {
+    gap: 12px;
+
+    padding: 13px;
+  }
+
+
+  .transaction-row strong {
+    max-width: 58%;
+  }
+
+}

@@ -9,8 +9,57 @@ import {
   initiatePayment,
 } from "./services/paymentApi";
 
+import PaymentLayout from "./components/PaymentLayout";
+import LoadingScreen from "./components/LoadingScreen";
+import CustomerStep from "./components/CustomerStep";
+import AmountStep from "./components/AmountStep";
+
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentFailed from "./pages/PaymentFailed";
+import PaymentCancelled from "./pages/PaymentCancelled";
+
 
 const App = () => {
+
+  /*
+   * -----------------------------------------
+   * URL ROUTING
+   * -----------------------------------------
+   */
+
+  const currentPath =
+    window.location.pathname;
+
+
+  if (
+    currentPath ===
+    "/payment/success"
+  ) {
+    return <PaymentSuccess />;
+  }
+
+
+  if (
+    currentPath ===
+    "/payment/failed"
+  ) {
+    return <PaymentFailed />;
+  }
+
+
+  if (
+    currentPath ===
+    "/payment/cancelled"
+  ) {
+    return <PaymentCancelled />;
+  }
+
+
+  /*
+   * -----------------------------------------
+   * PAYMENT FORM
+   * -----------------------------------------
+   */
 
   const [step, setStep] =
     useState(1);
@@ -21,11 +70,15 @@ const App = () => {
   const [amount, setAmount] =
     useState("");
 
-  const [loadingCustomer, setLoadingCustomer] =
-    useState(true);
+  const [
+    loadingCustomer,
+    setLoadingCustomer,
+  ] = useState(true);
 
-  const [loadingPayment, setLoadingPayment] =
-    useState(false);
+  const [
+    loadingPayment,
+    setLoadingPayment,
+  ] = useState(false);
 
   const [error, setError] =
     useState("");
@@ -34,13 +87,27 @@ const App = () => {
     useRef(null);
 
 
-  // -----------------------------------------
-  // Generate customer when page opens
-  // -----------------------------------------
+  /*
+   * -----------------------------------------
+   * Generate customer
+   * -----------------------------------------
+   */
 
   useEffect(() => {
 
     loadCustomer();
+
+    return () => {
+
+      if (paymentTimer.current) {
+
+        clearTimeout(
+          paymentTimer.current
+        );
+
+      }
+
+    };
 
   }, []);
 
@@ -67,7 +134,7 @@ const App = () => {
         );
 
         setError(
-          error.message ||
+          error?.message ||
           "Unable to generate customer details."
         );
 
@@ -76,12 +143,15 @@ const App = () => {
         setLoadingCustomer(false);
 
       }
+
     };
 
 
-  // -----------------------------------------
-  // Go to amount screen
-  // -----------------------------------------
+  /*
+   * -----------------------------------------
+   * Next
+   * -----------------------------------------
+   */
 
   const handleNext = () => {
 
@@ -92,12 +162,15 @@ const App = () => {
     setError("");
 
     setStep(2);
+
   };
 
 
-  // -----------------------------------------
-  // Amount change
-  // -----------------------------------------
+  /*
+   * -----------------------------------------
+   * Amount change
+   * -----------------------------------------
+   */
 
   const handleAmountChange =
     (event) => {
@@ -106,7 +179,10 @@ const App = () => {
         event.target.value;
 
 
-      // Allow only numbers and decimal
+      /*
+       * Only numbers and decimal
+       */
+
       if (
         value !== "" &&
         !/^\d*\.?\d*$/.test(value)
@@ -115,7 +191,10 @@ const App = () => {
       }
 
 
-      // Maximum amount
+      /*
+       * Maximum amount
+       */
+
       if (
         Number(value) > 50000
       ) {
@@ -128,28 +207,22 @@ const App = () => {
       setError("");
 
 
-      // Clear previous timer
+      /*
+       * Clear previous timer
+       */
+
       if (paymentTimer.current) {
+
         clearTimeout(
           paymentTimer.current
         );
+
       }
 
 
-      /**
+      /*
        * Automatically initiate payment
        * after user stops typing.
-       *
-       * Example:
-       *
-       * User types:
-       * 1
-       * 10
-       * 100
-       * 1000
-       *
-       * API will be called only after
-       * typing stops.
        */
 
       if (
@@ -159,18 +232,20 @@ const App = () => {
         paymentTimer.current =
           setTimeout(() => {
 
-            handlePayment(
-              value
-            );
+            handlePayment(value);
 
           }, 800);
+
       }
+
     };
 
 
-  // -----------------------------------------
-  // Initiate payment
-  // -----------------------------------------
+  /*
+   * -----------------------------------------
+   * Initiate payment
+   * -----------------------------------------
+   */
 
   const handlePayment =
     async (paymentAmount) => {
@@ -204,6 +279,7 @@ const App = () => {
         );
 
         return;
+
       }
 
 
@@ -238,10 +314,14 @@ const App = () => {
           throw new Error(
             "Payment URL was not received."
           );
+
         }
 
 
-        // Redirect to Paykar
+        /*
+         * Redirect to Paykar
+         */
+
         window.location.href =
           paymentUrl;
 
@@ -253,18 +333,22 @@ const App = () => {
         );
 
         setError(
-          error.message ||
+          error?.message ||
           "Unable to initiate payment."
         );
 
         setLoadingPayment(false);
+
       }
+
     };
 
 
-  // -----------------------------------------
-  // Back
-  // -----------------------------------------
+  /*
+   * -----------------------------------------
+   * Back
+   * -----------------------------------------
+   */
 
   const handleBack = () => {
 
@@ -272,264 +356,103 @@ const App = () => {
       return;
     }
 
+
     if (paymentTimer.current) {
+
       clearTimeout(
         paymentTimer.current
       );
+
     }
+
 
     setAmount("");
 
     setError("");
 
     setStep(1);
+
   };
 
 
-  // -----------------------------------------
-  // Loading customer
-  // -----------------------------------------
+  /*
+   * -----------------------------------------
+   * Loading customer
+   * -----------------------------------------
+   */
 
-  if (
-    loadingCustomer
-  ) {
+  if (loadingCustomer) {
 
     return (
-      <div className="payment-page">
-
-        <div className="payment-card">
-
-          <div className="payment-header">
-
-            <h1>
-              Alina Overseas
-            </h1>
-
-            <div className="secure-badge">
-              Secure Payment
-            </div>
-
-          </div>
-
-
-          <div className="payment-body">
-
-            <div className="loading-container">
-
-              <div className="spinner"></div>
-
-              <p>
-                Generating customer details...
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
+      <LoadingScreen
+        message="Generating customer details..."
+      />
     );
+
   }
 
 
+  /*
+   * -----------------------------------------
+   * Main payment page
+   * -----------------------------------------
+   */
+
   return (
-    <div className="payment-page">
+    <PaymentLayout>
 
-      <div className="payment-card">
+      {/*
+       * STEP 1
+       */}
 
-        {/* -------------------------------- */}
-        {/* Header */}
-        {/* -------------------------------- */}
+      {step === 1 && (
 
-        <div className="payment-header">
+        <CustomerStep
 
-          <h1>
-            Alina Overseas
-          </h1>
+          customer={customer}
 
-          <div className="secure-badge">
-            Secure Payment
-          </div>
+          error={error}
 
-        </div>
+          onNext={handleNext}
 
+        />
 
-        {/* -------------------------------- */}
-        {/* Body */}
-        {/* -------------------------------- */}
-
-        <div className="payment-body">
-
-          {/* ============================== */}
-          {/* STEP 1 */}
-          {/* ============================== */}
-
-          {step === 1 && (
-
-            <>
-              <div className="form-group">
-
-                <label>
-                  Customer Name
-                </label>
-
-                <input
-                  type="text"
-                  value={
-                    customer?.customerName ||
-                    ""
-                  }
-                  readOnly
-                />
-
-              </div>
+      )}
 
 
-              <div className="form-group">
+      {/*
+       * STEP 2
+       */}
 
-                <label>
-                  Email Address
-                </label>
+      {step === 2 && (
 
-                <input
-                  type="email"
-                  value={
-                    customer?.customerEmail ||
-                    ""
-                  }
-                  readOnly
-                />
+        <AmountStep
 
-              </div>
+          amount={amount}
 
+          error={error}
 
-              <div className="form-group">
+          loadingPayment={
+            loadingPayment
+          }
 
-                <label>
-                  Mobile Number
-                </label>
+          onAmountChange={
+            handleAmountChange
+          }
 
-                <input
-                  type="text"
-                  value={
-                    customer?.customerMobile ||
-                    ""
-                  }
-                  readOnly
-                />
+          onPayment={
+            handlePayment
+          }
 
-              </div>
+          onBack={
+            handleBack
+          }
 
+        />
 
-              {error && (
+      )}
 
-                <div className="error-message">
-                  {error}
-                </div>
-
-              )}
-
-
-              <button
-                type="button"
-                className="payment-button"
-                onClick={handleNext}
-                disabled={!customer}
-              >
-                Next
-              </button>
-
-            </>
-          )}
-
-
-          {/* ============================== */}
-          {/* STEP 2 */}
-          {/* ============================== */}
-
-          {step === 2 && (
-
-            <>
-              <div className="form-group">
-
-                <label>
-                  Amount
-                </label>
-
-                <div className="amount-wrapper">
-
-                  <span className="currency-symbol">
-                    ₹
-                  </span>
-
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={
-                      handleAmountChange
-                    }
-                    autoFocus
-                    disabled={loadingPayment}
-                  />
-
-                </div>
-
-                <div className="amount-help">
-                  Maximum amount is ₹50,000.
-                </div>
-
-              </div>
-
-
-              {error && (
-
-                <div className="error-message">
-                  {error}
-                </div>
-
-              )}
-
-
-              <button
-                type="button"
-                className="payment-button"
-                onClick={() =>
-                  handlePayment(amount)
-                }
-                disabled={
-                  loadingPayment ||
-                  !amount ||
-                  Number(amount) <= 0
-                }
-              >
-
-                {loadingPayment
-                  ? "Processing..."
-                  : "Pay"}
-
-              </button>
-
-
-              <button
-                type="button"
-                className="back-button"
-                onClick={handleBack}
-                disabled={loadingPayment}
-              >
-                Back
-              </button>
-
-            </>
-          )}
-
-        </div>
-
-      </div>
-
-    </div>
+    </PaymentLayout>
   );
 };
 
