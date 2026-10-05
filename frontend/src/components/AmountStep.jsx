@@ -4,7 +4,6 @@ const AmountStep = ({
   loadingPayment,
   onAmountChange,
   onPayment,
-  onBack,
 }) => {
 
   return (
@@ -63,16 +62,6 @@ const AmountStep = ({
         {loadingPayment
           ? "Processing..."
           : "Pay"}
-      </button>
-
-
-      <button
-        type="button"
-        className="back-button"
-        onClick={onBack}
-        disabled={loadingPayment}
-      >
-        Back
       </button>
 
     </>

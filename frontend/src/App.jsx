@@ -11,7 +11,6 @@ import {
 
 import PaymentLayout from "./components/PaymentLayout";
 import LoadingScreen from "./components/LoadingScreen";
-import CustomerStep from "./components/CustomerStep";
 import AmountStep from "./components/AmountStep";
 
 import PaymentSuccess from "./pages/PaymentSuccess";
@@ -20,9 +19,6 @@ import PaymentCancelled from "./pages/PaymentCancelled";
 
 
 const PaymentPage = () => {
-
-  const [step, setStep] =
-    useState(1);
 
   const [customer, setCustomer] =
     useState(null);
@@ -69,6 +65,8 @@ const PaymentPage = () => {
       setLoadingCustomer(true);
       setError("");
 
+      // Customer details are generated internally.
+      // They will NOT be shown to the user.
       const data =
         await generateCustomer();
 
@@ -91,18 +89,6 @@ const PaymentPage = () => {
       setLoadingCustomer(false);
 
     }
-
-  };
-
-
-  const handleNext = () => {
-
-    if (!customer) {
-      return;
-    }
-
-    setError("");
-    setStep(2);
 
   };
 
@@ -239,30 +225,11 @@ const PaymentPage = () => {
     };
 
 
-  const handleBack = () => {
-
-    if (loadingPayment) {
-      return;
-    }
-
-
-    if (paymentTimer.current) {
-      clearTimeout(paymentTimer.current);
-    }
-
-
-    setAmount("");
-    setError("");
-    setStep(1);
-
-  };
-
-
   if (loadingCustomer) {
 
     return (
       <LoadingScreen
-        message="Generating customer details..."
+        message="Please wait..."
       />
     );
 
@@ -272,25 +239,13 @@ const PaymentPage = () => {
   return (
     <PaymentLayout>
 
-      {step === 1 && (
-        <CustomerStep
-          customer={customer}
-          error={error}
-          onNext={handleNext}
-        />
-      )}
-
-
-      {step === 2 && (
-        <AmountStep
-          amount={amount}
-          error={error}
-          loadingPayment={loadingPayment}
-          onAmountChange={handleAmountChange}
-          onPayment={handlePayment}
-          onBack={handleBack}
-        />
-      )}
+      <AmountStep
+        amount={amount}
+        error={error}
+        loadingPayment={loadingPayment}
+        onAmountChange={handleAmountChange}
+        onPayment={handlePayment}
+      />
 
     </PaymentLayout>
   );
