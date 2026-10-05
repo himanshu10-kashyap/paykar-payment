@@ -43,6 +43,35 @@ const Payment = sequelize.define(
       field: "paykar_transaction_id",
     },
 
+    utr: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+
+    paykarGatewayOrderId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "paykar_gateway_order_id",
+    },
+
+    sabpaisaPaymentId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "sabpaisa_payment_id",
+    },
+
+    sabpaisaTransactionId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "sabpaisa_transaction_id",
+    },
+
+    paymentMethod: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      field: "payment_method",
+    },
+
     customerName: {
       type: DataTypes.STRING(255),
       allowNull: false,
@@ -199,10 +228,27 @@ const Payment = sequelize.define(
       allowNull: true,
       field: "webhook_status",
     },
+
+    vendorId: {
+      type: DataTypes.BIGINT.UNSIGNED,
+      allowNull: false,
+      field: "vendor_id",
+    },
+
+    vendorSlug: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      field: "vendor_slug",
+    },
   },
 
   {
     tableName: "payments",
+
+    timestamps: true,
+
+    createdAt: "created_at",
+    updatedAt: "updated_at",
 
     indexes: [
       {
@@ -233,6 +279,22 @@ const Payment = sequelize.define(
 
       {
         fields: ["customer_email"],
+      },
+
+      {
+        fields: ["vendor_id"],
+      },
+
+      {
+        fields: ["created_at"],
+      },
+
+      {
+        fields: ["vendor_id", "created_at"],
+      },
+
+      {
+        fields: ["status", "created_at"],
       },
     ],
   }

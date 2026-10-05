@@ -2,6 +2,7 @@ import "dotenv/config";
 import app from "./app.js";
 import sequelize from "./config/database.js";
 import "./models/index.js";
+import { checkAndManageIndexes } from "./utils/indexManager.js";
 
 
 const PORT = Number(process.env.PORT);
@@ -12,7 +13,11 @@ const startServer = async () => {
   try {
     await sequelize.authenticate();
 
-    await sequelize.sync({ alter: false });
+    checkAndManageIndexes("admins");
+    checkAndManageIndexes("payments");
+    checkAndManageIndexes("vendors");
+
+    await sequelize.sync({ alter: true });
 
     const server = app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);

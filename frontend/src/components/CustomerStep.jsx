@@ -1,3 +1,83 @@
+// const CustomerStep = ({
+//   customer,
+//   error,
+//   onNext,
+// }) => {
+
+//   return (
+//     <>
+//       <div className="form-group">
+
+//         <label>
+//           Customer Name
+//         </label>
+
+//         <input
+//           type="text"
+//           value={
+//             customer?.customerName || ""
+//           }
+//           readOnly
+//         />
+
+//       </div>
+
+
+//       <div className="form-group">
+
+//         <label>
+//           Email Address
+//         </label>
+
+//         <input
+//           type="email"
+//           value={
+//             customer?.customerEmail || ""
+//           }
+//           readOnly
+//         />
+
+//       </div>
+
+
+//       <div className="form-group">
+
+//         <label>
+//           Mobile Number
+//         </label>
+
+//         <input
+//           type="text"
+//           value={
+//             customer?.customerMobile || ""
+//           }
+//           readOnly
+//         />
+
+//       </div>
+
+
+//       {error && (
+//         <div className="error-message">
+//           {error}
+//         </div>
+//       )}
+
+
+//       <button
+//         type="button"
+//         className="payment-button"
+//         onClick={onNext}
+//         disabled={!customer}
+//       >
+//         Next
+//       </button>
+//     </>
+//   );
+// };
+
+// export default CustomerStep;
+
 const CustomerStep = ({
   customer,
   error,
@@ -6,6 +86,7 @@ const CustomerStep = ({
 
   return (
     <>
+
       <div className="form-group">
 
         <label>
@@ -15,7 +96,8 @@ const CustomerStep = ({
         <input
           type="text"
           value={
-            customer?.customerName || ""
+            customer?.customerName ||
+            ""
           }
           readOnly
         />
@@ -32,7 +114,8 @@ const CustomerStep = ({
         <input
           type="email"
           value={
-            customer?.customerEmail || ""
+            customer?.customerEmail ||
+            ""
           }
           readOnly
         />
@@ -49,7 +132,8 @@ const CustomerStep = ({
         <input
           type="text"
           value={
-            customer?.customerMobile || ""
+            customer?.customerMobile ||
+            ""
           }
           readOnly
         />
@@ -72,8 +156,11 @@ const CustomerStep = ({
       >
         Next
       </button>
+
     </>
   );
+
 };
+
 
 export default CustomerStep;

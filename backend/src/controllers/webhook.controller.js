@@ -121,13 +121,30 @@ export const paykarWebhook = async (req, res) => {
       paymentStatus = "EXPIRED";
     }
 
+    console.log("payload", payload)
+    console.log("webhookData", webhookData)
+    
     await payment.update({
-      paykarTransactionId: payment.paykarTransactionId || webhookData?.trx_id || null,
+      // Paykar transaction ID comes from top-level trx_id
+      paykarTransactionId: payload?.trx_id || payment.paykarTransactionId || null,
+      // Paykar gateway order ID
+      paykarGatewayOrderId: webhookData?.paykar_gateway_order_id || null,
+      // SabPaisa payment ID
+      sabpaisaPaymentId: webhookData?.sabpaisa_payment_id || null,
+      // SabPaisa transaction ID
+      sabpaisaTransactionId: webhookData?.sabpaisa_txn_id || null,
+      // UTR
+      utr: webhookData?.utr || null,
+      // Payment method
+      paymentMethod: webhookData?.payment_method || null,
+      // Paykar webhook status
       paymentStatus: webhookStatus || null,
+      // Internal payment status
       status: paymentStatus,
       paidAt,
       webhookReceived: true,
       webhookReceivedAt: new Date(),
+      // Save complete webhook response
       webhookPayload: payload,
       webhookEnvironment: environment,
       webhookStatus: webhookStatus || null,

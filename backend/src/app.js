@@ -6,7 +6,9 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { notFoundHandler } from "./middleware/notFound.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import webhookRoutes from "./routes/webhook.routes.js";
-
+import adminRoutes from "./routes/admin.routes.js";
+import vendorRoutes from "./routes/vendor.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 
 const app = express();
 
@@ -82,11 +84,13 @@ const healthHandler = (req, res) => {
   });
 };
 
-
 app.get("/health", healthHandler);
 app.get("/api/health", healthHandler);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/webhooks", webhookRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/admin/vendors", vendorRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
