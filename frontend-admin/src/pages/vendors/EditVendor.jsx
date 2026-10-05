@@ -222,7 +222,7 @@ const EditVendor = () => {
           </p>
 
           <p className="mt-2 break-all text-sm font-semibold text-slate-800">
-            https://thenexuspay.com/{slug}
+            https://paykar.dummydoma.in/{slug}
           </p>
         </div>
 

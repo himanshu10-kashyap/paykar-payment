@@ -2,7 +2,7 @@ import Vendor from "../models/Vendor.js";
 import Payment from "../models/Payment.js";
 import { col } from "sequelize";
 
-const FRONTEND_URL = "https://thenexuspay.com";
+const FRONTEND_URL = "https://paykar.dummydoma.in";
 
 
 const RESERVED_SLUGS = [

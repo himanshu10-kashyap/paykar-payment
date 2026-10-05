@@ -203,7 +203,7 @@ const CreateVendor = () => {
           </p>
 
           <p className="mt-2 break-all text-sm font-semibold text-slate-800">
-            https://thenexuspay.com/
+            https://paykar.dummydoma.in/
             {slug.trim() ||
               companyName
                 .trim()
