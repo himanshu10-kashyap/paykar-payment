@@ -20,6 +20,40 @@ const verifySignature = (payload, signature, secret) => {
 
   const expectedSignature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
   const receivedSignature = signature.replace(/^sha256=/i, "").trim();
+  console.log("=================================");
+console.log("PAYKAR SIGNATURE DEBUG");
+console.log("Environment:", environment);
+
+console.log(
+  "Received signature:",
+  receivedSignature
+    ? `${receivedSignature.slice(0, 8)}...${receivedSignature.slice(-8)}`
+    : "MISSING"
+);
+
+console.log(
+  "Expected signature:",
+  expectedSignature
+    ? `${expectedSignature.slice(0, 8)}...${expectedSignature.slice(-8)}`
+    : "EMPTY"
+);
+
+console.log(
+  "Webhook secret exists:",
+  !!secret
+);
+
+console.log(
+  "Webhook secret length:",
+  secret?.length || 0
+);
+
+console.log(
+  "Signature match:",
+  receivedSignature === expectedSignature
+);
+
+console.log("=================================");
   const expectedBuffer = Buffer.from(expectedSignature, "utf8");
   const receivedBuffer = Buffer.from(receivedSignature, "utf8");
 
