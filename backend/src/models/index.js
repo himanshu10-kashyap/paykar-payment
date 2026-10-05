@@ -14,11 +14,15 @@ Vendor.belongsTo(Admin, {
 
 Vendor.hasMany(Payment, {
   foreignKey: "vendorId",
+  sourceKey: "id",
   as: "payments",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
 });
 
 Payment.belongsTo(Vendor, {
   foreignKey: "vendorId",
+  targetKey: "id",
   as: "vendor",
 });
 

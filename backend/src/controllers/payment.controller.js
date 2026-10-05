@@ -125,6 +125,14 @@ export const initiatePayment = async (req, res) => {
       });
     }
 
+    console.log("========== PAYMENT VENDOR DEBUG ==========");
+console.log("vendorSlug:", vendorSlug);
+console.log("vendor.id:", vendor.id);
+console.log("vendor.id type:", typeof vendor.id);
+console.log("vendor.slug:", vendor.slug);
+console.log("vendor.isActive:", vendor.isActive);
+console.log("==========================================");
+
 
     // ------------------------------------------------
     // Debug vendor
