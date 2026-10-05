@@ -19,47 +19,7 @@ import PaymentFailed from "./pages/PaymentFailed";
 import PaymentCancelled from "./pages/PaymentCancelled";
 
 
-const App = () => {
-
-  /*
-   * -----------------------------------------
-   * URL ROUTING
-   * -----------------------------------------
-   */
-
-  const currentPath =
-    window.location.pathname;
-
-
-  if (
-    currentPath ===
-    "/payment/success"
-  ) {
-    return <PaymentSuccess />;
-  }
-
-
-  if (
-    currentPath ===
-    "/payment/failed"
-  ) {
-    return <PaymentFailed />;
-  }
-
-
-  if (
-    currentPath ===
-    "/payment/cancelled"
-  ) {
-    return <PaymentCancelled />;
-  }
-
-
-  /*
-   * -----------------------------------------
-   * PAYMENT FORM
-   * -----------------------------------------
-   */
+const PaymentPage = () => {
 
   const [step, setStep] =
     useState(1);
@@ -87,12 +47,6 @@ const App = () => {
     useRef(null);
 
 
-  /*
-   * -----------------------------------------
-   * Generate customer
-   * -----------------------------------------
-   */
-
   useEffect(() => {
 
     loadCustomer();
@@ -100,11 +54,7 @@ const App = () => {
     return () => {
 
       if (paymentTimer.current) {
-
-        clearTimeout(
-          paymentTimer.current
-        );
-
+        clearTimeout(paymentTimer.current);
       }
 
     };
@@ -112,46 +62,38 @@ const App = () => {
   }, []);
 
 
-  const loadCustomer =
-    async () => {
+  const loadCustomer = async () => {
 
-      try {
+    try {
 
-        setLoadingCustomer(true);
+      setLoadingCustomer(true);
+      setError("");
 
-        setError("");
+      const data =
+        await generateCustomer();
 
-        const data =
-          await generateCustomer();
+      setCustomer(data);
 
-        setCustomer(data);
+    } catch (error) {
 
-      } catch (error) {
+      console.error(
+        "Customer generation error:",
+        error
+      );
 
-        console.error(
-          "Customer generation error:",
-          error
-        );
+      setError(
+        error?.message ||
+        "Unable to generate customer details."
+      );
 
-        setError(
-          error?.message ||
-          "Unable to generate customer details."
-        );
+    } finally {
 
-      } finally {
+      setLoadingCustomer(false);
 
-        setLoadingCustomer(false);
+    }
 
-      }
+  };
 
-    };
-
-
-  /*
-   * -----------------------------------------
-   * Next
-   * -----------------------------------------
-   */
 
   const handleNext = () => {
 
@@ -160,92 +102,52 @@ const App = () => {
     }
 
     setError("");
-
     setStep(2);
 
   };
 
 
-  /*
-   * -----------------------------------------
-   * Amount change
-   * -----------------------------------------
-   */
+  const handleAmountChange = (event) => {
 
-  const handleAmountChange =
-    (event) => {
-
-      const value =
-        event.target.value;
+    const value =
+      event.target.value;
 
 
-      /*
-       * Only numbers and decimal
-       */
-
-      if (
-        value !== "" &&
-        !/^\d*\.?\d*$/.test(value)
-      ) {
-        return;
-      }
+    if (
+      value !== "" &&
+      !/^\d*\.?\d*$/.test(value)
+    ) {
+      return;
+    }
 
 
-      /*
-       * Maximum amount
-       */
-
-      if (
-        Number(value) > 50000
-      ) {
-        return;
-      }
+    if (Number(value) > 50000) {
+      return;
+    }
 
 
-      setAmount(value);
-
-      setError("");
-
-
-      /*
-       * Clear previous timer
-       */
-
-      if (paymentTimer.current) {
-
-        clearTimeout(
-          paymentTimer.current
-        );
-
-      }
+    setAmount(value);
+    setError("");
 
 
-      /*
-       * Automatically initiate payment
-       * after user stops typing.
-       */
-
-      if (
-        Number(value) > 0
-      ) {
-
-        paymentTimer.current =
-          setTimeout(() => {
-
-            handlePayment(value);
-
-          }, 800);
-
-      }
-
-    };
+    if (paymentTimer.current) {
+      clearTimeout(paymentTimer.current);
+    }
 
 
-  /*
-   * -----------------------------------------
-   * Initiate payment
-   * -----------------------------------------
-   */
+    if (Number(value) > 0) {
+
+      paymentTimer.current =
+        setTimeout(() => {
+
+          handlePayment(value);
+
+        }, 800);
+
+    }
+
+  };
+
 
   const handlePayment =
     async (paymentAmount) => {
@@ -270,9 +172,7 @@ const App = () => {
       }
 
 
-      if (
-        numericAmount > 50000
-      ) {
+      if (numericAmount > 50000) {
 
         setError(
           "Maximum amount is ₹50,000."
@@ -286,7 +186,6 @@ const App = () => {
       try {
 
         setLoadingPayment(true);
-
         setError("");
 
 
@@ -318,10 +217,6 @@ const App = () => {
         }
 
 
-        /*
-         * Redirect to Paykar
-         */
-
         window.location.href =
           paymentUrl;
 
@@ -344,12 +239,6 @@ const App = () => {
     };
 
 
-  /*
-   * -----------------------------------------
-   * Back
-   * -----------------------------------------
-   */
-
   const handleBack = () => {
 
     if (loadingPayment) {
@@ -358,28 +247,16 @@ const App = () => {
 
 
     if (paymentTimer.current) {
-
-      clearTimeout(
-        paymentTimer.current
-      );
-
+      clearTimeout(paymentTimer.current);
     }
 
 
     setAmount("");
-
     setError("");
-
     setStep(1);
 
   };
 
-
-  /*
-   * -----------------------------------------
-   * Loading customer
-   * -----------------------------------------
-   */
 
   if (loadingCustomer) {
 
@@ -392,68 +269,62 @@ const App = () => {
   }
 
 
-  /*
-   * -----------------------------------------
-   * Main payment page
-   * -----------------------------------------
-   */
-
   return (
     <PaymentLayout>
 
-      {/*
-       * STEP 1
-       */}
-
       {step === 1 && (
-
         <CustomerStep
-
           customer={customer}
-
           error={error}
-
           onNext={handleNext}
-
         />
-
       )}
 
 
-      {/*
-       * STEP 2
-       */}
-
       {step === 2 && (
-
         <AmountStep
-
           amount={amount}
-
           error={error}
-
-          loadingPayment={
-            loadingPayment
-          }
-
-          onAmountChange={
-            handleAmountChange
-          }
-
-          onPayment={
-            handlePayment
-          }
-
-          onBack={
-            handleBack
-          }
-
+          loadingPayment={loadingPayment}
+          onAmountChange={handleAmountChange}
+          onPayment={handlePayment}
+          onBack={handleBack}
         />
-
       )}
 
     </PaymentLayout>
   );
+};
+
+
+const App = () => {
+
+  const pathname =
+    window.location.pathname;
+
+
+  if (
+    pathname === "/payment/success"
+  ) {
+    return <PaymentSuccess />;
+  }
+
+
+  if (
+    pathname === "/payment/failed"
+  ) {
+    return <PaymentFailed />;
+  }
+
+
+  if (
+    pathname === "/payment/cancelled"
+  ) {
+    return <PaymentCancelled />;
+  }
+
+
+  return <PaymentPage />;
 };
 
 

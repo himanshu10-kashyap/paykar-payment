@@ -15,9 +15,6 @@ const PaymentSuccess = () => {
   const [loading, setLoading] =
     useState(true);
 
-  const [verified, setVerified] =
-    useState(false);
-
   const [payment, setPayment] =
     useState(null);
 
@@ -34,10 +31,12 @@ const PaymentSuccess = () => {
         setLoading(true);
         setError("");
 
+
         const params =
           new URLSearchParams(
             window.location.search
           );
+
 
         const trxId =
           params.get("trx_id");
@@ -53,7 +52,7 @@ const PaymentSuccess = () => {
 
 
         console.log(
-          "Verifying Paykar transaction:",
+          "Verifying transaction:",
           trxId
         );
 
@@ -63,43 +62,47 @@ const PaymentSuccess = () => {
 
 
         console.log(
-          "Paykar verification response:",
+          "Verification response:",
           result
         );
 
 
-        const status =
-          result?.data?.status ||
-          result?.paykarResponse?.status;
-
-
         if (
-          result?.success &&
-          (
-            status === "success" ||
-            status === "completed"
-          )
+          !result?.success
         ) {
 
-          setPayment(
-            result?.data || {}
+          throw new Error(
+            result?.message ||
+            "Payment verification failed."
           );
 
-          setVerified(true);
-
-          return;
         }
 
 
-        throw new Error(
-          result?.message ||
-          "Payment could not be verified."
+        const verifiedPayment =
+          result?.data;
+
+
+        if (
+          verifiedPayment?.status !==
+          "success"
+        ) {
+
+          throw new Error(
+            "Payment verification was not successful."
+          );
+
+        }
+
+
+        setPayment(
+          verifiedPayment
         );
 
       } catch (error) {
 
         console.error(
-          "Payment verification error:",
+          "Verification error:",
           error
         );
 
@@ -113,6 +116,7 @@ const PaymentSuccess = () => {
         setLoading(false);
 
       }
+
     };
 
 
@@ -128,7 +132,7 @@ const PaymentSuccess = () => {
 
         <div className="verification-container">
 
-          <div className="spinner"></div>
+          <div className="spinner" />
 
           <h2>
             Verifying Transaction
@@ -147,7 +151,7 @@ const PaymentSuccess = () => {
   }
 
 
-  if (!verified) {
+  if (error) {
 
     return (
       <PaymentLayout>
@@ -163,8 +167,7 @@ const PaymentSuccess = () => {
           </h2>
 
           <p>
-            {error ||
-              "We could not verify this transaction."}
+            {error}
           </p>
 
         </div>
@@ -198,83 +201,84 @@ const PaymentSuccess = () => {
 
         <div className="transaction-details">
 
-          {payment?.trx_id && (
-            <div className="transaction-row">
+          <div className="transaction-row">
+            <span>
+              Transaction ID
+            </span>
 
-              <span>
-                Transaction ID
-              </span>
-
-              <strong>
-                {payment.trx_id}
-              </strong>
-
-            </div>
-          )}
-
-
-          {payment?.ref_trx && (
-            <div className="transaction-row">
-
-              <span>
-                Order ID
-              </span>
-
-              <strong>
-                {payment.ref_trx}
-              </strong>
-
-            </div>
-          )}
-
-
-          {payment?.amount !== undefined && (
-            <div className="transaction-row">
-
-              <span>
-                Amount
-              </span>
-
-              <strong>
-                ₹{payment.amount}
-              </strong>
-
-            </div>
-          )}
-
-
-          {payment?.currency && (
-            <div className="transaction-row">
-
-              <span>
-                Currency
-              </span>
-
-              <strong>
-                {payment.currency}
-              </strong>
-
-            </div>
-          )}
-
-
-          {payment?.description && (
-            <div className="transaction-row">
-
-              <span>
-                Description
-              </span>
-
-              <strong>
-                {payment.description}
-              </strong>
-
-            </div>
-          )}
+            <strong>
+              {payment?.trx_id}
+            </strong>
+          </div>
 
 
           <div className="transaction-row">
+            <span>
+              Order Reference
+            </span>
 
+            <strong>
+              {payment?.ref_trx}
+            </strong>
+          </div>
+
+
+          <div className="transaction-row">
+            <span>
+              Amount
+            </span>
+
+            <strong>
+              ₹{payment?.amount}
+            </strong>
+          </div>
+
+
+          <div className="transaction-row">
+            <span>
+              Fee
+            </span>
+
+            <strong>
+              ₹{payment?.fee}
+            </strong>
+          </div>
+
+
+          <div className="transaction-row">
+            <span>
+              Net Amount
+            </span>
+
+            <strong>
+              ₹{payment?.net_amount}
+            </strong>
+          </div>
+
+
+          <div className="transaction-row">
+            <span>
+              Customer
+            </span>
+
+            <strong>
+              {payment?.customer?.name}
+            </strong>
+          </div>
+
+
+          <div className="transaction-row">
+            <span>
+              Email
+            </span>
+
+            <strong>
+              {payment?.customer?.email}
+            </strong>
+          </div>
+
+
+          <div className="transaction-row">
             <span>
               Status
             </span>
@@ -282,7 +286,6 @@ const PaymentSuccess = () => {
             <strong className="verified-status">
               VERIFIED
             </strong>
-
           </div>
 
         </div>
@@ -292,5 +295,6 @@ const PaymentSuccess = () => {
     </PaymentLayout>
   );
 };
+
 
 export default PaymentSuccess;
