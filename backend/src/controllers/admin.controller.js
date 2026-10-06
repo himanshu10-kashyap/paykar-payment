@@ -526,3 +526,44 @@ export const deactivateSubAdmin = async (
     });
   }
 };
+
+export const deleteSubAdmin = async (
+  req,
+  res
+) => {
+  try {
+    const { id } = req.params;
+
+    const admin = await Admin.findOne({
+      where: {
+        id,
+        role: "SUB_ADMIN",
+      },
+    });
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Sub Admin not found",
+      });
+    }
+
+    await admin.destroy();
+
+    return res.status(200).json({
+      success: true,
+      message: "Sub Admin deleted successfully",
+    });
+  } catch (error) {
+    console.error(
+      "Delete sub admin error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete sub admin",
+      error: error.message,
+    });
+  }
+};

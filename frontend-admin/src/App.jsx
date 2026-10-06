@@ -8,6 +8,7 @@ import Login from "./pages/auth/Login";
 
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import PermissionRoute from "./components/common/PermissionRoute";
+import AccessDenied from "./components/common/AccessDenied";
 
 import AdminLayout from "./components/layout/AdminLayout";
 
@@ -20,6 +21,8 @@ import Vendors from "./pages/vendors/Vendors";
 import CreateVendor from "./pages/vendors/CreateVendor";
 import EditVendor from "./pages/vendors/EditVendor";
 import VendorPayments from "./pages/vendors/VendorPayments";
+import VendorPaymentDetails from "./pages/vendors/VendorPaymentDetails";
+import VendorAccess from "./pages/vendors/VendorAccess";
 
 import Admins from "./pages/admins/Admins";
 import CreateSubAdmin from "./pages/admins/CreateSubAdmin";
@@ -31,32 +34,39 @@ import {
   PERMISSIONS,
 } from "./constants/permissions";
 
-
 const App = () => {
   return (
     <Routes>
 
-      {/* ================================================= */}
-      {/* LOGIN */}
-      {/* ================================================= */}
+      {/* =================================================
+          LOGIN
+      ================================================== */}
 
       <Route
         path="/login"
         element={<Login />}
       />
 
-
-      {/* ================================================= */}
-      {/* PROTECTED ADMIN AREA */}
-      {/* ================================================= */}
+      {/* =================================================
+          PROTECTED APPLICATION
+      ================================================== */}
 
       <Route element={<ProtectedRoute />}>
 
         <Route element={<AdminLayout />}>
 
-          {/* ================================================= */}
-          {/* DASHBOARD */}
-          {/* ================================================= */}
+          {/* =================================================
+              DASHBOARD
+
+              SUPER_ADMIN
+              -> Always allowed
+
+              SUB_ADMIN
+              -> Only allowed with VIEW_DASHBOARD
+
+              SUB_ADMIN WITHOUT PERMISSION
+              -> Show proper access restricted screen
+          ================================================== */}
 
           <Route
             path="/dashboard"
@@ -65,16 +75,25 @@ const App = () => {
                 permission={
                   PERMISSIONS.VIEW_DASHBOARD
                 }
+                fallback={
+                  <AccessDenied
+                    title="Dashboard Access Restricted"
+                    message="Your account does not have permission to view the dashboard. Please contact the administrator if you need dashboard access."
+                    showBackButton={false}
+                    showDashboardButton={false}
+                  />
+                }
               >
                 <Dashboard />
               </PermissionRoute>
             }
           />
 
+          {/* =================================================
+              GENERIC PAYMENTS
 
-          {/* ================================================= */}
-          {/* PAYMENTS */}
-          {/* ================================================= */}
+              Sub Admin will NOT have this permission.
+          ================================================== */}
 
           <Route
             path="/payments"
@@ -89,6 +108,10 @@ const App = () => {
             }
           />
 
+          {/* =================================================
+              GENERIC PAYMENT DETAILS
+          ================================================== */}
+
           <Route
             path="/payments/:id"
             element={
@@ -102,23 +125,23 @@ const App = () => {
             }
           />
 
+          {/* =================================================
+              VENDORS
 
-          {/* ================================================= */}
-          {/* VENDORS */}
-          {/* ================================================= */}
+              Sub Admin can access assigned vendors.
+              Backend should restrict returned vendors.
+          ================================================== */}
 
           <Route
             path="/vendors"
             element={
-              <PermissionRoute
-                permission={
-                  PERMISSIONS.VIEW_VENDORS
-                }
-              >
-                <Vendors />
-              </PermissionRoute>
+              <Vendors />
             }
           />
+
+          {/* =================================================
+              CREATE VENDOR
+          ================================================== */}
 
           <Route
             path="/vendors/create"
@@ -133,6 +156,10 @@ const App = () => {
             }
           />
 
+          {/* =================================================
+              EDIT VENDOR
+          ================================================== */}
+
           <Route
             path="/vendors/:id/edit"
             element={
@@ -146,23 +173,50 @@ const App = () => {
             }
           />
 
+          {/* =================================================
+              VENDOR PAYMENTS
+          ================================================== */}
+
           <Route
             path="/vendors/:id/payments"
             element={
+              <VendorPayments />
+            }
+          />
+
+          {/* =================================================
+              VENDOR PAYMENT DETAILS
+          ================================================== */}
+
+          <Route
+            path="/vendors/:vendorId/payments/:paymentId"
+            element={
+              <VendorPaymentDetails />
+            }
+          />
+
+          {/* =================================================
+              VENDOR ACCESS
+
+              Super Admin / permitted admin only.
+          ================================================== */}
+
+          <Route
+            path="/vendors/:id/access"
+            element={
               <PermissionRoute
                 permission={
-                  PERMISSIONS.VIEW_VENDOR_PAYMENTS
+                  PERMISSIONS.VIEW_VENDORS
                 }
               >
-                <VendorPayments />
+                <VendorAccess />
               </PermissionRoute>
             }
           />
 
-
-          {/* ================================================= */}
-          {/* ADMINS */}
-          {/* ================================================= */}
+          {/* =================================================
+              ADMINISTRATORS
+          ================================================== */}
 
           <Route
             path="/admins"
@@ -177,10 +231,9 @@ const App = () => {
             }
           />
 
-
-          {/* ================================================= */}
-          {/* CREATE SUB ADMIN */}
-          {/* ================================================= */}
+          {/* =================================================
+              CREATE SUB ADMIN
+          ================================================== */}
 
           <Route
             path="/admins/create"
@@ -195,10 +248,9 @@ const App = () => {
             }
           />
 
-
-          {/* ================================================= */}
-          {/* EDIT SUB ADMIN */}
-          {/* ================================================= */}
+          {/* =================================================
+              EDIT SUB ADMIN
+          ================================================== */}
 
           <Route
             path="/admins/:id/edit"
@@ -213,24 +265,24 @@ const App = () => {
             }
           />
 
-
-          {/* ================================================= */}
-          {/* PROFILE */}
-          {/* ================================================= */}
+          {/* =================================================
+              PROFILE
+          ================================================== */}
 
           <Route
             path="/profile"
-            element={<Profile />}
+            element={
+              <Profile />
+            }
           />
 
         </Route>
 
       </Route>
 
-
-      {/* ================================================= */}
-      {/* DEFAULT */}
-      {/* ================================================= */}
+      {/* =================================================
+          DEFAULT
+      ================================================== */}
 
       <Route
         path="/"
@@ -242,10 +294,9 @@ const App = () => {
         }
       />
 
-
-      {/* ================================================= */}
-      {/* UNKNOWN */}
-      {/* ================================================= */}
+      {/* =================================================
+          UNKNOWN ROUTE
+      ================================================== */}
 
       <Route
         path="*"
@@ -260,6 +311,5 @@ const App = () => {
     </Routes>
   );
 };
-
 
 export default App;

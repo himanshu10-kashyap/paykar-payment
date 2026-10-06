@@ -10,8 +10,8 @@ import {
     deleteVendor,
     getVendorPayments,
 } from "../controllers/vendor.controller.js";
-import { authenticateAdmin } from "../middleware/auth.middleware.js";
-import { requirePermission } from "../middleware/permission.middleware.js";
+import { authenticateAdmin, requireSuperAdmin } from "../middleware/auth.middleware.js";
+import { requireVendorAccess } from "../middleware/vendorAccess.middleware.js";
 
 
 const router = express.Router();
@@ -19,21 +19,21 @@ const router = express.Router();
 
 router.get("/public/:slug", getVendorBySlug);
 
-router.get("/", authenticateAdmin, requirePermission("VIEW_VENDORS"), getVendors);
+router.get("/", authenticateAdmin, getVendors);
 
-router.get("/:id/payments", authenticateAdmin, requirePermission("VIEW_VENDOR_PAYMENTS"), getVendorPayments);
+router.get("/:id/payments", authenticateAdmin, requireVendorAccess, getVendorPayments);
 
-router.get("/:id", authenticateAdmin, requirePermission("VIEW_VENDORS"), getVendor);
+router.get("/:id", authenticateAdmin, requireVendorAccess, getVendor);
 
-router.post("/", authenticateAdmin, requirePermission("CREATE_VENDOR"), createVendor);
+router.post("/", authenticateAdmin, requireSuperAdmin, createVendor);
 
-router.put("/:id", authenticateAdmin, requirePermission("EDIT_VENDOR"), editVendor);
+router.put("/:id", authenticateAdmin, requireSuperAdmin, editVendor);
 
-router.patch("/:id/activate", authenticateAdmin, requirePermission("ACTIVATE_VENDOR"), activateVendor);
+router.patch("/:id/activate", authenticateAdmin, requireSuperAdmin, activateVendor);
 
-router.patch("/:id/deactivate", authenticateAdmin, requirePermission("DEACTIVATE_VENDOR"), deactivateVendor);
+router.patch("/:id/deactivate", authenticateAdmin, requireSuperAdmin, deactivateVendor);
 
-router.delete("/:id", authenticateAdmin, requirePermission("DELETE_VENDOR"), deleteVendor);
+router.delete("/:id", authenticateAdmin, requireSuperAdmin, deleteVendor);
 
 
 export default router;

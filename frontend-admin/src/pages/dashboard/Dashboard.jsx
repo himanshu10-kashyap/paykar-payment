@@ -138,7 +138,7 @@ const Dashboard = () => {
         if (!response?.success) {
           throw new Error(
             response?.message ||
-              "Failed to load dashboard"
+            "Failed to load dashboard"
           );
         }
 
@@ -151,8 +151,8 @@ const Dashboard = () => {
 
         setError(
           error?.response?.data?.message ||
-            error?.message ||
-            "Failed to load dashboard"
+          error?.message ||
+          "Failed to load dashboard"
         );
       } finally {
         setLoading(false);
@@ -411,7 +411,7 @@ const Dashboard = () => {
               const height = Math.max(
                 (amount /
                   maxChartAmount) *
-                  100,
+                100,
                 amount > 0 ? 6 : 2
               );
 
@@ -471,16 +471,15 @@ const Dashboard = () => {
                 <div
                   className="h-full rounded-full bg-emerald-500"
                   style={{
-                    width: `${
-                      vendors.total
+                    width: `${vendors.total
                         ? Math.min(
-                            (vendors.active /
-                              vendors.total) *
-                              100,
-                            100
-                          )
+                          (vendors.active /
+                            vendors.total) *
+                          100,
+                          100
+                        )
                         : 0
-                    }%`,
+                      }%`,
                   }}
                 />
               </div>
@@ -501,16 +500,15 @@ const Dashboard = () => {
                 <div
                   className="h-full rounded-full bg-slate-400"
                   style={{
-                    width: `${
-                      vendors.total
+                    width: `${vendors.total
                         ? Math.min(
-                            (vendors.inactive /
-                              vendors.total) *
-                              100,
-                            100
-                          )
+                          (vendors.inactive /
+                            vendors.total) *
+                          100,
+                          100
+                        )
                         : 0
-                    }%`,
+                      }%`,
                   }}
                 />
               </div>
@@ -587,7 +585,7 @@ const Dashboard = () => {
 
             <tbody className="divide-y divide-slate-100">
               {recentPayments.length ===
-              0 ? (
+                0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -669,7 +667,7 @@ const Dashboard = () => {
                       <td className="px-5 py-4 text-sm text-slate-500">
                         {formatDate(
                           payment.createdAt ||
-                            payment.created_at
+                          payment.created_at
                         )}
                       </td>
                     </tr>
@@ -684,7 +682,7 @@ const Dashboard = () => {
 
         <div className="divide-y divide-slate-100 md:hidden">
           {recentPayments.length ===
-          0 ? (
+            0 ? (
             <div className="px-5 py-12 text-center text-sm text-slate-400">
               No payments found.
             </div>
@@ -752,7 +750,7 @@ const Dashboard = () => {
                       <p className="mt-1 text-sm text-slate-600">
                         {formatDate(
                           payment.createdAt ||
-                            payment.created_at
+                          payment.created_at
                         )}
                       </p>
                     </div>

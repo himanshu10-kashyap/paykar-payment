@@ -10,8 +10,9 @@ import {
   getCurrentAdmin,
   activateSubAdmin,
   deactivateSubAdmin,
+  deleteSubAdmin,
 } from "../controllers/admin.controller.js";
-import { authenticateAdmin } from "../middleware/auth.middleware.js";
+import { authenticateAdmin, requireSuperAdmin } from "../middleware/auth.middleware.js";
 import { requirePermission } from "../middleware/permission.middleware.js";
 
 const router = express.Router();
@@ -22,18 +23,20 @@ router.post("/login", loginAdmin);
 
 router.post("/change-password", authenticateAdmin, changePassword);
 
-router.get("/", authenticateAdmin, requirePermission("VIEW_ADMINS"), getAdmins);
+router.get("/", authenticateAdmin, requireSuperAdmin, getAdmins);
 
-router.post("/sub-admin", authenticateAdmin, requirePermission("CREATE_SUB_ADMIN"), createSubAdmin);
+router.post("/sub-admin", authenticateAdmin, requireSuperAdmin, createSubAdmin);
 
-router.put("/sub-admin/:id", authenticateAdmin, requirePermission("EDIT_SUB_ADMIN"), editSubAdmin);
+router.put("/sub-admin/:id", authenticateAdmin, requireSuperAdmin, editSubAdmin);
 
-router.patch("/sub-admin/:id/reset-password", authenticateAdmin, requirePermission("RESET_SUB_ADMIN_PASSWORD"), resetSubAdminPassword);
+router.patch("/sub-admin/:id/reset-password", authenticateAdmin, requireSuperAdmin, resetSubAdminPassword);
 
-router.put("/super-admin", authenticateAdmin, editSuperAdmin);
+router.put("/super-admin", authenticateAdmin, requireSuperAdmin, editSuperAdmin);
 
-router.patch("/sub-admin/:id/activate", authenticateAdmin, requirePermission("ACTIVATE_SUB_ADMIN"), activateSubAdmin);
+router.patch("/sub-admin/:id/activate", authenticateAdmin, requireSuperAdmin, activateSubAdmin);
 
-router.patch("/sub-admin/:id/deactivate", authenticateAdmin, requirePermission("DEACTIVATE_SUB_ADMIN"), deactivateSubAdmin);
+router.patch("/sub-admin/:id/deactivate", authenticateAdmin, requireSuperAdmin, deactivateSubAdmin);
+
+router.delete("/sub-admin/:id", authenticateAdmin, requireSuperAdmin, deleteSubAdmin);
 
 export default router;

@@ -113,7 +113,7 @@ const Profile = () => {
       if (!response?.success) {
         throw new Error(
           response?.message ||
-            "Failed to update username"
+          "Failed to update username"
         );
       }
 
@@ -131,8 +131,8 @@ const Profile = () => {
 
       setUsernameError(
         error?.response?.data?.message ||
-          error?.message ||
-          "Failed to update username."
+        error?.message ||
+        "Failed to update username."
       );
 
     } finally {
@@ -203,7 +203,7 @@ const Profile = () => {
       if (!response?.success) {
         throw new Error(
           response?.message ||
-            "Failed to change password"
+          "Failed to change password"
         );
       }
 
@@ -225,8 +225,8 @@ const Profile = () => {
 
       setPasswordError(
         error?.response?.data?.message ||
-          error?.message ||
-          "Failed to change password."
+        error?.message ||
+        "Failed to change password."
       );
 
     } finally {

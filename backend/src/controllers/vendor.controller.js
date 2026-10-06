@@ -1,6 +1,7 @@
 import Vendor from "../models/Vendor.js";
 import Payment from "../models/Payment.js";
-import { col } from "sequelize";
+import { col, Op } from "sequelize";
+import VendorSubadminAccess from "../models/VendorSubadminAccess.js";
 
 const FRONTEND_URL = "https://paykar.dummydoma.in";
 
@@ -21,6 +22,48 @@ const createSlug = (value) => {
     return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 };
 
+const normalizeRole = (role) => {
+  return String(role || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+};
+
+const isSubAdmin = (admin) => {
+  const role = normalizeRole(
+    admin?.role
+  );
+
+  return (
+    role === "SUB_ADMIN" ||
+    role === "SUBADMIN"
+  );
+};
+
+const checkVendorAccess = async (
+  admin,
+  vendorId
+) => {
+  console.log("admin",admin,vendorId)
+  // Super Admin can access every vendor
+  if (!isSubAdmin(admin)) {
+    return true;
+  }
+
+  if (!admin?.id) {
+    return false;
+  }
+
+  const access =
+    await VendorSubadminAccess.findOne({
+      where: {
+        vendorId: vendorId,
+        subadminId: admin.id,
+      },
+    });
+    console.log("access", access)
+  return Boolean(access);
+};
 
 export const createVendor = async (req, res) => {
 
@@ -108,81 +151,249 @@ export const createVendor = async (req, res) => {
 
 };
 
+// --------------------------------------------------
+// GET CURRENT ADMIN
+// --------------------------------------------------
+
+const getCurrentAdmin = (req) => {
+  return req.admin || req.user;
+};
+
+// --------------------------------------------------
+// NORMALIZE ROLE
+// --------------------------------------------------
+
+const getRole = (admin) => {
+  return String(admin?.role || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+};
+
+// --------------------------------------------------
+// GET VENDORS
+// --------------------------------------------------
+
 export const getVendors = async (req, res) => {
+  try {
+    const admin = getCurrentAdmin(req);
 
-    try {
-
-        const vendors = await Vendor.findAll({
-            order: [["createdAt", "DESC"]],
-        });
-
-
-        const data = vendors.map((vendor) => {
-
-            const item = vendor.toJSON();
-
-            return {
-                ...item,
-                paymentUrl: `${FRONTEND_URL}/${item.slug}`,
-            };
-
-        });
-
-
-        return res.status(200).json({
-            success: true,
-            data,
-        });
-
-    } catch (error) {
-        console.error("Get vendors error:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error",
-        });
-
+    if (!admin) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
     }
 
+    const role = getRole(admin);
+
+    console.log("🔐 Get Vendors:", {
+      adminId: admin.id,
+      role,
+    });
+
+    // ==================================================
+    // SUPER ADMIN
+    // ==================================================
+    //
+    // Super admin can see ALL vendors.
+    //
+    // ==================================================
+
+    if (role === "SUPER_ADMIN") {
+      const vendors = await Vendor.findAll({
+        order: [["created_at", "DESC"]],
+      });
+
+      const data = vendors.map((vendor) => {
+        const item = vendor.toJSON();
+
+        return {
+          ...item,
+          paymentUrl: `${FRONTEND_URL}/${item.slug}`,
+        };
+      });
+
+      return res.status(200).json({
+        success: true,
+        data,
+      });
+    }
+
+    // ==================================================
+    // SUB ADMIN
+    // ==================================================
+
+    const isSubAdmin =
+      role === "SUB_ADMIN" ||
+      role === "SUBADMIN";
+
+    if (!isSubAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to view vendors",
+      });
+    }
+
+    // ==================================================
+    // FIND ASSIGNED VENDORS
+    // ==================================================
+
+    console.log(
+      "🔎 Finding vendor access for sub-admin:",
+      admin.id
+    );
+
+    const accessRecords =
+      await VendorSubadminAccess.findAll({
+        where: {
+          subadminId: admin.id,
+        },
+        attributes: ["vendorId"],
+      });
+
+    console.log(
+      "🔎 Vendor access records:",
+      accessRecords.map(
+        (item) => item.vendorId
+      )
+    );
+
+    // ==================================================
+    // NO ASSIGNED VENDORS
+    // ==================================================
+
+    if (!accessRecords.length) {
+      console.log(
+        "ℹ️ Sub-admin has no assigned vendors"
+      );
+
+      return res.status(200).json({
+        success: true,
+        data: [],
+      });
+    }
+
+    // ==================================================
+    // GET ONLY ASSIGNED VENDORS
+    // ==================================================
+
+    const vendorIds = accessRecords.map(
+      (item) => item.vendorId
+    );
+
+    console.log(
+      "🔎 Loading assigned vendors:",
+      vendorIds
+    );
+
+    const vendors = await Vendor.findAll({
+      where: {
+        id: {
+          [Op.in]: vendorIds,
+        },
+      },
+      order: [["created_at", "DESC"]],
+    });
+
+    // ==================================================
+    // RESPONSE
+    // ==================================================
+
+    const data = vendors.map((vendor) => {
+      const item = vendor.toJSON();
+
+      return {
+        ...item,
+        paymentUrl: `${FRONTEND_URL}/${item.slug}`,
+      };
+    });
+
+    console.log(
+      `✅ Returning ${data.length} vendors to admin ${admin.id}`
+    );
+
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+
+  } catch (error) {
+    console.error(
+      "❌ Get vendors error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
 };
 
 
-export const getVendor = async (req, res) => {
+export const getVendor = async (
+  req,
+  res
+) => {
+  try {
+    const { id } = req.params;
 
-    try {
+    const vendor =
+      await Vendor.findByPk(id);
 
-        const { id } = req.params;
-
-
-        const vendor = await Vendor.findByPk(id);
-
-
-        if (!vendor) {
-            return res.status(404).json({
-                success: false,
-                message: "Vendor not found",
-            });
-
-        }
-
-
-        return res.status(200).json({
-            success: true,
-            data: {
-                ...vendor.toJSON(),
-                paymentUrl: `${FRONTEND_URL}/${vendor.slug}`,
-            },
-
-        });
-
-    } catch (error) {
-        console.error("Get vendor error:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error",
-        });
-
+    if (!vendor) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Vendor not found",
+      });
     }
 
+    // ------------------------------------------------
+    // CHECK SUB ADMIN ACCESS
+    // ------------------------------------------------
+
+    const allowed =
+      await checkVendorAccess(
+        req.admin,
+        vendor.id
+      );
+
+    if (!allowed) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "You do not have access to this vendor",
+      });
+    }
+
+    // ------------------------------------------------
+    // SUCCESS
+    // ------------------------------------------------
+
+    return res.status(200).json({
+      success: true,
+
+      data: {
+        ...vendor.toJSON(),
+
+        paymentUrl:
+          `${FRONTEND_URL}/${vendor.slug}`,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Get vendor error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Internal server error",
+    });
+  }
 };
 
 export const getVendorBySlug = async (req, res) => {
@@ -456,52 +667,82 @@ export const deleteVendor = async (req, res) => {
 };
 
 
-export const getVendorPayments = async (req, res) => {
-    try {
-        const { id } = req.params;
+export const getVendorPayments = async (
+  req,
+  res
+) => {
+  try {
+    const { id } = req.params;
 
-        const vendor = await Vendor.findByPk(id);
+    console.log(
+      "🔥 GET VENDOR PAYMENTS",
+      {
+        vendorId: id,
+        admin: req.admin,
+      }
+    );
 
-        if (!vendor) {
-            return res.status(404).json({
-                success: false,
-                message: "Vendor not found",
-            });
-        }
+    const vendor =
+      await Vendor.findByPk(id);
 
-        const payments = await Payment.findAll({
-            where: {
-                vendorId: vendor.id,
-            },
-
-            order: [
-                [col("created_at"), "DESC"],
-            ],
-        });
-
-        return res.status(200).json({
-            success: true,
-
-            data: {
-                vendor: {
-                    id: vendor.id,
-                    companyName: vendor.companyName,
-                    slug: vendor.slug,
-                    isActive: vendor.isActive,
-                },
-
-                payments,
-            },
-        });
-    } catch (error) {
-        console.error(
-            "Get vendor payments error:",
-            error
-        );
-
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error",
-        });
+    if (!vendor) {
+      return res.status(404).json({
+        success: false,
+        message: "Vendor not found",
+      });
     }
+
+    const allowed =
+      await checkVendorAccess(
+        req.admin,
+        vendor.id
+      );
+
+    console.log(
+      "🔥 VENDOR ACCESS RESULT:",
+      allowed
+    );
+
+    if (!allowed) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "You do not have access to this vendor payments",
+      });
+    }
+
+    const payments =
+      await Payment.findAll({
+        where: {
+          vendorId: vendor.id,
+        },
+      });
+
+    return res.status(200).json({
+      success: true,
+
+      data: {
+        vendor: {
+          id: vendor.id,
+          companyName:
+            vendor.companyName,
+          slug: vendor.slug,
+        },
+
+        payments,
+      },
+    });
+
+  } catch (error) {
+    console.error(
+      "Get vendor payments error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Internal server error",
+    });
+  }
 };

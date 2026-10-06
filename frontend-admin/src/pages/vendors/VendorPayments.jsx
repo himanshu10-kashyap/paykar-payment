@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+
 import {
   ArrowLeft,
   Calendar,
   CreditCard,
   IndianRupee,
+  Eye,
 } from "lucide-react";
 
 import {
@@ -11,7 +13,9 @@ import {
   useParams,
 } from "react-router-dom";
 
-import { getVendorPayments } from "../../services/vendorApi";
+import {
+  getVendorPayments,
+} from "../../services/vendorApi";
 
 import Loader from "../../components/common/Loader";
 
@@ -20,12 +24,21 @@ const VendorPayments = () => {
 
   const { id } = useParams();
 
-  const [vendor, setVendor] = useState(null);
-  const [payments, setPayments] = useState([]);
+  const [vendor, setVendor] =
+    useState(null);
 
-  const [loading, setLoading] = useState(true);
+  const [payments, setPayments] =
+    useState([]);
 
-  const [error, setError] = useState("");
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  // ------------------------------------------------
+  // LOAD PAYMENTS
+  // ------------------------------------------------
 
   useEffect(() => {
     const loadPayments = async () => {
@@ -39,11 +52,14 @@ const VendorPayments = () => {
         if (!response?.success) {
           throw new Error(
             response?.message ||
-              "Failed to load vendor payments."
+            "Failed to load vendor payments."
           );
         }
 
-        setVendor(response.data?.vendor || null);
+        setVendor(
+          response.data?.vendor ||
+          null
+        );
 
         setPayments(
           response.data?.payments || []
@@ -56,8 +72,8 @@ const VendorPayments = () => {
 
         setError(
           err?.response?.data?.message ||
-            err?.message ||
-            "Failed to load vendor payments."
+          err?.message ||
+          "Failed to load vendor payments."
         );
       } finally {
         setLoading(false);
@@ -67,8 +83,16 @@ const VendorPayments = () => {
     loadPayments();
   }, [id]);
 
-  const formatAmount = (amount) => {
-    return Number(amount || 0).toLocaleString(
+  // ------------------------------------------------
+  // HELPERS
+  // ------------------------------------------------
+
+  const formatAmount = (
+    amount
+  ) => {
+    return Number(
+      amount || 0
+    ).toLocaleString(
       "en-IN",
       {
         style: "currency",
@@ -77,10 +101,16 @@ const VendorPayments = () => {
     );
   };
 
-  const formatDate = (date) => {
-    if (!date) return "-";
+  const formatDate = (
+    date
+  ) => {
+    if (!date) {
+      return "-";
+    }
 
-    return new Date(date).toLocaleString(
+    return new Date(
+      date
+    ).toLocaleString(
       "en-IN",
       {
         day: "2-digit",
@@ -92,15 +122,24 @@ const VendorPayments = () => {
     );
   };
 
-  const getStatusClass = (status) => {
-    switch (status) {
+  const getStatusClass = (
+    status
+  ) => {
+    switch (
+    String(
+      status || ""
+    ).toUpperCase()
+    ) {
       case "SUCCESS":
+      case "COMPLETED":
         return "bg-emerald-50 text-emerald-600";
 
       case "FAILED":
+      case "FAILURE":
         return "bg-red-50 text-red-600";
 
       case "CANCELLED":
+      case "CANCELED":
         return "bg-orange-50 text-orange-600";
 
       case "EXPIRED":
@@ -111,14 +150,22 @@ const VendorPayments = () => {
     }
   };
 
+  // ------------------------------------------------
+  // UI
+  // ------------------------------------------------
+
   return (
     <div>
+
       {/* Header */}
 
       <div className="mb-6 flex items-center gap-3">
+
         <button
           type="button"
-          onClick={() => navigate("/vendors")}
+          onClick={() =>
+            navigate("/vendors")
+          }
           className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-100"
         >
           <ArrowLeft size={18} />
@@ -130,10 +177,15 @@ const VendorPayments = () => {
           </h1>
 
           <p className="mt-1 text-sm text-slate-500">
-            {vendor?.companyName || "Vendor"} payment history.
+            {vendor?.companyName ||
+              "Vendor"}{" "}
+            payment history.
           </p>
         </div>
+
       </div>
+
+      {/* Error */}
 
       {error && (
         <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -147,11 +199,15 @@ const VendorPayments = () => {
         </div>
       ) : (
         <>
+
           {/* Summary */}
 
           <div className="mb-5 grid gap-4 sm:grid-cols-3">
+
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
               <div className="flex items-center justify-between">
+
                 <p className="text-sm font-medium text-slate-500">
                   Total Payments
                 </p>
@@ -159,15 +215,19 @@ const VendorPayments = () => {
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                   <CreditCard size={19} />
                 </div>
+
               </div>
 
               <p className="mt-3 text-2xl font-bold text-slate-900">
                 {payments.length}
               </p>
+
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
               <div className="flex items-center justify-between">
+
                 <p className="text-sm font-medium text-slate-500">
                   Successful
                 </p>
@@ -175,20 +235,33 @@ const VendorPayments = () => {
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
                   <IndianRupee size={19} />
                 </div>
+
               </div>
 
               <p className="mt-3 text-2xl font-bold text-slate-900">
                 {
                   payments.filter(
                     (payment) =>
-                      payment.status === "SUCCESS"
+                      String(
+                        payment.status ||
+                        ""
+                      ).toUpperCase() ===
+                      "SUCCESS" ||
+                      String(
+                        payment.status ||
+                        ""
+                      ).toUpperCase() ===
+                      "COMPLETED"
                   ).length
                 }
               </p>
+
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
               <div className="flex items-center justify-between">
+
                 <p className="text-sm font-medium text-slate-500">
                   Successful Amount
                 </p>
@@ -196,51 +269,77 @@ const VendorPayments = () => {
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                   <IndianRupee size={19} />
                 </div>
+
               </div>
 
               <p className="mt-3 text-2xl font-bold text-slate-900">
+
                 {formatAmount(
                   payments
                     .filter(
                       (payment) =>
-                        payment.status === "SUCCESS"
+                        String(
+                          payment.status ||
+                          ""
+                        ).toUpperCase() ===
+                        "SUCCESS" ||
+                        String(
+                          payment.status ||
+                          ""
+                        ).toUpperCase() ===
+                        "COMPLETED"
                     )
                     .reduce(
-                      (sum, payment) =>
-                        sum +
+                      (
+                        total,
+                        payment
+                      ) =>
+                        total +
                         Number(
-                          payment.amount || 0
+                          payment.amount ||
+                          0
                         ),
                       0
                     )
                 )}
+
               </p>
+
             </div>
+
           </div>
 
-          {/* Payments */}
+          {/* Payments Table */}
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            {payments.length === 0 ? (
-              <div className="flex min-h-[300px] flex-col items-center justify-center text-center">
-                <CreditCard
-                  size={30}
-                  className="text-slate-300"
-                />
 
-                <h3 className="mt-3 font-bold text-slate-700">
+            {payments.length === 0 ? (
+
+              <div className="flex min-h-[300px] flex-col items-center justify-center px-6 text-center">
+
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                  <CreditCard size={25} />
+                </div>
+
+                <h3 className="mt-4 text-base font-bold text-slate-800">
                   No payments found
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-400">
                   This vendor has no payment records yet.
                 </p>
+
               </div>
+
             ) : (
+
               <div className="overflow-x-auto">
-                <table className="min-w-[1100px] w-full">
+
+                <table className="w-full min-w-[1100px]">
+
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50">
+
                       <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
                         Order
                       </th>
@@ -262,87 +361,146 @@ const VendorPayments = () => {
                       </th>
 
                       <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                        Date
+                        Created
                       </th>
+
+                      <th className="px-5 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Action
+                      </th>
+
                     </tr>
                   </thead>
 
                   <tbody className="divide-y divide-slate-100">
-                    {payments.map((payment) => (
-                      <tr
-                        key={payment.id}
-                        className="transition hover:bg-slate-50"
-                      >
-                        <td className="px-5 py-4">
-                          <p className="font-semibold text-slate-800">
-                            {payment.orderId || "-"}
-                          </p>
 
-                          <p className="mt-1 text-xs text-slate-400">
-                            {payment.paykarReference || "-"}
-                          </p>
-                        </td>
+                    {payments.map(
+                      (payment) => (
+                        <tr
+                          key={payment.id}
+                          className="transition hover:bg-slate-50"
+                        >
 
-                        <td className="px-5 py-4">
-                          <p className="font-medium text-slate-800">
-                            {payment.customerName || "-"}
-                          </p>
+                          <td className="px-5 py-4">
 
-                          <p className="mt-1 text-xs text-slate-400">
-                            {payment.customerEmail || "-"}
-                          </p>
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <span className="font-bold text-slate-800">
-                            {formatAmount(
-                              payment.amount
-                            )}
-                          </span>
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <span
-                            className={`inline-flex rounded-full px-3 py-1.5 text-xs font-bold ${getStatusClass(
-                              payment.status
-                            )}`}
-                          >
-                            {payment.status ||
-                              "PENDING"}
-                          </span>
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <p className="max-w-[180px] truncate text-sm text-slate-600">
-                            {payment.paykarTransactionId ||
-                              "-"}
-                          </p>
-
-                          {payment.utr && (
-                            <p className="mt-1 text-xs text-slate-400">
-                              UTR: {payment.utr}
+                            <p className="font-semibold text-slate-800">
+                              {payment.orderId ||
+                                "-"}
                             </p>
-                          )}
-                        </td>
 
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-2 text-sm text-slate-500">
-                            <Calendar size={15} />
+                            <p className="mt-1 text-xs text-slate-400">
+                              {payment.paykarReference ||
+                                "-"}
+                            </p>
 
-                            {formatDate(
-                              payment.createdAt
+                          </td>
+
+                          <td className="px-5 py-4">
+
+                            <p className="font-medium text-slate-800">
+                              {payment.customerName ||
+                                "-"}
+                            </p>
+
+                            <p className="mt-1 text-xs text-slate-400">
+                              {payment.customerEmail ||
+                                "-"}
+                            </p>
+
+                          </td>
+
+                          <td className="px-5 py-4">
+
+                            <span className="font-bold text-slate-800">
+                              {formatAmount(
+                                payment.amount
+                              )}
+                            </span>
+
+                          </td>
+
+                          <td className="px-5 py-4">
+
+                            <span
+                              className={`inline-flex rounded-full px-3 py-1.5 text-xs font-bold ${getStatusClass(
+                                payment.status
+                              )}`}
+                            >
+                              {payment.status ||
+                                "PENDING"}
+                            </span>
+
+                          </td>
+
+                          <td className="px-5 py-4">
+
+                            <p className="max-w-[180px] truncate text-sm text-slate-600">
+                              {payment.paykarTransactionId ||
+                                "-"}
+                            </p>
+
+                            {payment.utr && (
+                              <p className="mt-1 text-xs text-slate-400">
+                                UTR:{" "}
+                                {payment.utr}
+                              </p>
                             )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+
+                          </td>
+
+                          <td className="px-5 py-4">
+
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                              <Calendar size={15} />
+
+                              {formatDate(
+                                payment.createdAt
+                              )}
+                            </div>
+
+                          </td>
+
+                          {/* VIEW */}
+
+                          <td className="px-5 py-4">
+
+                            <div className="flex items-center justify-center">
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigate(
+                                    `/vendors/${id}/payments/${payment.id}`
+                                  )
+                                }
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                                title="View Payment Details"
+                                aria-label="View Payment Details"
+                              >
+                                <Eye
+                                  size={17}
+                                />
+                              </button>
+
+                            </div>
+
+                          </td>
+
+                        </tr>
+                      )
+                    )}
+
                   </tbody>
+
                 </table>
+
               </div>
             )}
+
           </div>
+
         </>
       )}
+
     </div>
   );
 };

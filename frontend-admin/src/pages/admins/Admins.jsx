@@ -10,6 +10,7 @@ import {
   Plus,
   RefreshCw,
   ShieldCheck,
+  Trash2,
   UserCheck,
   UserX,
 } from "lucide-react";
@@ -21,25 +22,14 @@ import {
   activateSubAdmin,
   deactivateSubAdmin,
   resetSubAdminPassword,
+  deleteSubAdmin,
 } from "../../services/adminApi";
 
 import Loader from "../../components/common/Loader";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
 
-import { usePermission } from "../../hooks/usePermission";
-
-import {
-  PERMISSIONS,
-} from "../../constants/permissions";
-
-
 const Admins = () => {
   const navigate = useNavigate();
-
-  const {
-    hasPermission,
-  } = usePermission();
-
 
   /*
   |--------------------------------------------------------------------------
@@ -47,18 +37,13 @@ const Admins = () => {
   |--------------------------------------------------------------------------
   */
 
-  const [admins, setAdmins] =
-    useState([]);
+  const [admins, setAdmins] = useState([]);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [refreshing, setRefreshing] =
-    useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [error, setError] =
-    useState("");
-
+  const [error, setError] = useState("");
 
   /*
   |--------------------------------------------------------------------------
@@ -81,7 +66,6 @@ const Admins = () => {
     setResetLoading,
   ] = useState(false);
 
-
   /*
   |--------------------------------------------------------------------------
   | Activate / Deactivate Confirmation
@@ -97,6 +81,24 @@ const Admins = () => {
     action: null,
   });
 
+  /*
+  |--------------------------------------------------------------------------
+  | Delete Confirmation
+  |--------------------------------------------------------------------------
+  */
+
+  const [
+    deleteDialog,
+    setDeleteDialog,
+  ] = useState({
+    open: false,
+    admin: null,
+  });
+
+  const [
+    deleteLoading,
+    setDeleteLoading,
+  ] = useState(false);
 
   /*
   |--------------------------------------------------------------------------
@@ -115,8 +117,7 @@ const Admins = () => {
 
         setError("");
 
-        const response =
-          await getAdmins();
+        const response = await getAdmins();
 
         if (!response?.success) {
           throw new Error(
@@ -130,7 +131,6 @@ const Admins = () => {
             ? response.data
             : []
         );
-
       } catch (error) {
         console.error(
           "Get admins error:",
@@ -142,7 +142,6 @@ const Admins = () => {
             error?.message ||
             "Failed to load admins"
         );
-
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -150,7 +149,6 @@ const Admins = () => {
     },
     []
   );
-
 
   /*
   |--------------------------------------------------------------------------
@@ -162,16 +160,13 @@ const Admins = () => {
     loadAdmins();
   }, [loadAdmins]);
 
-
   /*
   |--------------------------------------------------------------------------
   | Open Activate / Deactivate Dialog
   |--------------------------------------------------------------------------
   */
 
-  const openStatusDialog = (
-    admin
-  ) => {
+  const openStatusDialog = (admin) => {
     setConfirmDialog({
       open: true,
       admin,
@@ -180,7 +175,6 @@ const Admins = () => {
         : "activate",
     });
   };
-
 
   /*
   |--------------------------------------------------------------------------
@@ -195,7 +189,6 @@ const Admins = () => {
       action: null,
     });
   };
-
 
   /*
   |--------------------------------------------------------------------------
@@ -231,7 +224,6 @@ const Admins = () => {
         }
 
         await loadAdmins(true);
-
       } catch (error) {
         console.error(
           "Update admin status error:",
@@ -246,21 +238,17 @@ const Admins = () => {
       }
     };
 
-
   /*
   |--------------------------------------------------------------------------
   | Open Reset Password
   |--------------------------------------------------------------------------
   */
 
-  const openResetPassword = (
-    admin
-  ) => {
+  const openResetPassword = (admin) => {
     setResetPasswordAdmin(admin);
     setResetPassword("");
     setError("");
   };
-
 
   /*
   |--------------------------------------------------------------------------
@@ -276,7 +264,6 @@ const Admins = () => {
     setResetPasswordAdmin(null);
     setResetPassword("");
   };
-
 
   /*
   |--------------------------------------------------------------------------
@@ -311,6 +298,7 @@ const Admins = () => {
 
         closeResetPassword();
 
+        await loadAdmins(true);
       } catch (error) {
         console.error(
           "Reset admin password error:",
@@ -322,12 +310,80 @@ const Admins = () => {
             error?.message ||
             "Failed to reset password"
         );
-
       } finally {
         setResetLoading(false);
       }
     };
 
+  /*
+  |--------------------------------------------------------------------------
+  | Open Delete Dialog
+  |--------------------------------------------------------------------------
+  */
+
+  const openDeleteDialog = (admin) => {
+    setDeleteDialog({
+      open: true,
+      admin,
+    });
+
+    setError("");
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Close Delete Dialog
+  |--------------------------------------------------------------------------
+  */
+
+  const closeDeleteDialog = () => {
+    if (deleteLoading) {
+      return;
+    }
+
+    setDeleteDialog({
+      open: false,
+      admin: null,
+    });
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Delete Sub Admin
+  |--------------------------------------------------------------------------
+  */
+
+  const handleDeleteSubAdmin = async () => {
+    const admin = deleteDialog.admin;
+
+    if (!admin) {
+      return;
+    }
+
+    try {
+      setDeleteLoading(true);
+      setError("");
+
+      await deleteSubAdmin(admin.id);
+
+      closeDeleteDialog();
+
+      await loadAdmins(true);
+    } catch (error) {
+      console.error(
+        "Delete sub admin error:",
+        error
+      );
+
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to delete sub admin"
+      );
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   /*
   |--------------------------------------------------------------------------
@@ -345,7 +401,6 @@ const Admins = () => {
       </div>
     );
   }
-
 
   /*
   |--------------------------------------------------------------------------
@@ -376,7 +431,6 @@ const Admins = () => {
           </p>
         </div>
 
-
         <div className="flex flex-col gap-2 sm:flex-row">
 
           {/* Refresh */}
@@ -401,31 +455,22 @@ const Admins = () => {
             Refresh
           </button>
 
-
           {/* Create Sub Admin */}
 
-          {hasPermission(
-            PERMISSIONS.CREATE_SUB_ADMIN
-          ) && (
-            <button
-              type="button"
-              onClick={() =>
-                navigate(
-                  "/admins/create"
-                )
-              }
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
-            >
-              <Plus size={18} />
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/admins/create")
+            }
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+          >
+            <Plus size={18} />
 
-              Create Sub Admin
-            </button>
-          )}
+            Create Sub Admin
+          </button>
 
         </div>
-
       </div>
-
 
       {/* ================================================= */}
       {/* ERROR */}
@@ -436,7 +481,6 @@ const Admins = () => {
           {error}
         </div>
       )}
-
 
       {/* ================================================= */}
       {/* DESKTOP TABLE */}
@@ -476,20 +520,17 @@ const Admins = () => {
 
             </thead>
 
-
             <tbody className="divide-y divide-slate-100">
 
               {admins.length === 0 ? (
 
                 <tr>
-
                   <td
                     colSpan={5}
                     className="px-5 py-14 text-center text-sm text-slate-400"
                   >
                     No sub admins found.
                   </td>
-
                 </tr>
 
               ) : (
@@ -501,9 +542,7 @@ const Admins = () => {
                     className="transition hover:bg-slate-50"
                   >
 
-                    {/* ================================================= */}
                     {/* USERNAME */}
-                    {/* ================================================= */}
 
                     <td className="px-5 py-4">
 
@@ -535,10 +574,7 @@ const Admins = () => {
 
                     </td>
 
-
-                    {/* ================================================= */}
                     {/* ROLE */}
-                    {/* ================================================= */}
 
                     <td className="px-5 py-4">
 
@@ -555,10 +591,7 @@ const Admins = () => {
 
                     </td>
 
-
-                    {/* ================================================= */}
                     {/* PERMISSIONS */}
-                    {/* ================================================= */}
 
                     <td className="px-5 py-4">
 
@@ -568,10 +601,7 @@ const Admins = () => {
                           ?.length ? (
 
                           admin.permissions.map(
-                            (
-                              permission
-                            ) => (
-
+                            (permission) => (
                               <span
                                 key={
                                   permission
@@ -580,7 +610,6 @@ const Admins = () => {
                               >
                                 {permission}
                               </span>
-
                             )
                           )
 
@@ -596,10 +625,7 @@ const Admins = () => {
 
                     </td>
 
-
-                    {/* ================================================= */}
                     {/* STATUS */}
-                    {/* ================================================= */}
 
                     <td className="px-5 py-4">
 
@@ -631,10 +657,7 @@ const Admins = () => {
 
                     </td>
 
-
-                    {/* ================================================= */}
                     {/* ACTIONS */}
-                    {/* ================================================= */}
 
                     <td className="px-5 py-4">
 
@@ -642,104 +665,86 @@ const Admins = () => {
 
                         {/* EDIT */}
 
-                        {hasPermission(
-                          PERMISSIONS.EDIT_SUB_ADMIN
-                        ) && (
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              navigate(
-                                `/admins/${admin.id}/edit`
-                              )
-                            }
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-                            title="Edit Sub Admin"
-                          >
-                            <Edit3
-                              size={16}
-                            />
-                          </button>
-
-                        )}
-
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              `/admins/${admin.id}/edit`
+                            )
+                          }
+                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                          title="Edit Sub Admin"
+                        >
+                          <Edit3 size={16} />
+                        </button>
 
                         {/* RESET PASSWORD */}
 
-                        {hasPermission(
-                          PERMISSIONS.RESET_SUB_ADMIN_PASSWORD
-                        ) && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openResetPassword(
+                              admin
+                            )
+                          }
+                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                          title="Reset Password"
+                        >
+                          <KeyRound
+                            size={16}
+                          />
+                        </button>
+
+                        {/* ACTIVATE / DEACTIVATE */}
+
+                        {admin.isActive ? (
 
                           <button
                             type="button"
                             onClick={() =>
-                              openResetPassword(
+                              openStatusDialog(
                                 admin
                               )
                             }
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
-                            title="Reset Password"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100"
+                            title="Deactivate Sub Admin"
                           >
-                            <KeyRound
+                            <UserX size={16} />
+                          </button>
+
+                        ) : (
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openStatusDialog(
+                                admin
+                              )
+                            }
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
+                            title="Activate Sub Admin"
+                          >
+                            <UserCheck
                               size={16}
                             />
                           </button>
 
                         )}
 
+                        {/* DELETE */}
 
-                        {/* ================================================= */}
-                        {/* DEACTIVATE */}
-                        {/* ================================================= */}
-
-                        {admin.isActive &&
-                          hasPermission(
-                            PERMISSIONS.DEACTIVATE_SUB_ADMIN
-                          ) && (
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openStatusDialog(
-                                  admin
-                                )
-                              }
-                              className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100"
-                              title="Deactivate Sub Admin"
-                            >
-                              <UserX
-                                size={16}
-                              />
-                            </button>
-
-                          )}
-
-
-                        {/* ================================================= */}
-                        {/* ACTIVATE */}
-                        {/* ================================================= */}
-
-                        {!admin.isActive &&
-                          hasPermission(
-                            PERMISSIONS.ACTIVATE_SUB_ADMIN
-                          ) && (
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openStatusDialog(
-                                  admin
-                                )
-                              }
-                              className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
-                              title="Activate Sub Admin"
-                            >
-                              <UserCheck
-                                size={16}
-                              />
-                            </button>
-
-                          )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openDeleteDialog(
+                              admin
+                            )
+                          }
+                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 bg-white text-red-600 transition hover:bg-red-50"
+                          title="Delete Sub Admin"
+                        >
+                          <Trash2 size={16} />
+                        </button>
 
                       </div>
 
@@ -758,7 +763,6 @@ const Admins = () => {
         </div>
 
       </div>
-
 
       {/* ================================================= */}
       {/* MOBILE */}
@@ -781,9 +785,7 @@ const Admins = () => {
               className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
             >
 
-              {/* ================================================= */}
               {/* TOP */}
-              {/* ================================================= */}
 
               <div className="flex items-start justify-between gap-3">
 
@@ -814,7 +816,6 @@ const Admins = () => {
 
                 </div>
 
-
                 {/* STATUS */}
 
                 {admin.isActive ? (
@@ -833,9 +834,7 @@ const Admins = () => {
 
                   <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
 
-                    <UserX
-                      size={13}
-                    />
+                    <UserX size={13} />
 
                     Inactive
 
@@ -845,10 +844,7 @@ const Admins = () => {
 
               </div>
 
-
-              {/* ================================================= */}
               {/* PERMISSIONS */}
-              {/* ================================================= */}
 
               <div className="mt-4">
 
@@ -863,7 +859,6 @@ const Admins = () => {
 
                     admin.permissions.map(
                       (permission) => (
-
                         <span
                           key={
                             permission
@@ -872,7 +867,6 @@ const Admins = () => {
                         >
                           {permission}
                         </span>
-
                       )
                     )
 
@@ -888,111 +882,94 @@ const Admins = () => {
 
               </div>
 
-
-              {/* ================================================= */}
               {/* ACTIONS */}
-              {/* ================================================= */}
 
               <div className="mt-4 flex gap-2 border-t border-slate-100 pt-4">
 
                 {/* EDIT */}
 
-                {hasPermission(
-                  PERMISSIONS.EDIT_SUB_ADMIN
-                ) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(
+                      `/admins/${admin.id}/edit`
+                    )
+                  }
+                  className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  <Edit3 size={15} />
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate(
-                        `/admins/${admin.id}/edit`
-                      )
-                    }
-                    className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                  >
-                    <Edit3
-                      size={15}
-                    />
-
-                    Edit
-                  </button>
-
-                )}
-
+                  Edit
+                </button>
 
                 {/* RESET PASSWORD */}
 
-                {hasPermission(
-                  PERMISSIONS.RESET_SUB_ADMIN_PASSWORD
-                ) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openResetPassword(
+                      admin
+                    )
+                  }
+                  className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                >
+                  <KeyRound
+                    size={15}
+                  />
+
+                  Password
+                </button>
+
+                {/* ACTIVATE / DEACTIVATE */}
+
+                {admin.isActive ? (
 
                   <button
                     type="button"
                     onClick={() =>
-                      openResetPassword(
+                      openStatusDialog(
                         admin
                       )
                     }
-                    className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                    className="flex h-10 w-11 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100"
+                    title="Deactivate Sub Admin"
                   >
-                    <KeyRound
-                      size={15}
-                    />
+                    <UserX size={17} />
+                  </button>
 
-                    Password
+                ) : (
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openStatusDialog(
+                        admin
+                      )
+                    }
+                    className="flex h-10 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
+                    title="Activate Sub Admin"
+                  >
+                    <UserCheck
+                      size={17}
+                    />
                   </button>
 
                 )}
 
+                {/* DELETE */}
 
-                {/* DEACTIVATE */}
-
-                {admin.isActive &&
-                  hasPermission(
-                    PERMISSIONS.DEACTIVATE_SUB_ADMIN
-                  ) && (
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openStatusDialog(
-                          admin
-                        )
-                      }
-                      className="flex h-10 w-11 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100"
-                      title="Deactivate Sub Admin"
-                    >
-                      <UserX
-                        size={17}
-                      />
-                    </button>
-
-                  )}
-
-
-                {/* ACTIVATE */}
-
-                {!admin.isActive &&
-                  hasPermission(
-                    PERMISSIONS.ACTIVATE_SUB_ADMIN
-                  ) && (
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openStatusDialog(
-                          admin
-                        )
-                      }
-                      className="flex h-10 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"
-                      title="Activate Sub Admin"
-                    >
-                      <UserCheck
-                        size={17}
-                      />
-                    </button>
-
-                  )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    openDeleteDialog(
+                      admin
+                    )
+                  }
+                  className="flex h-10 w-11 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-white text-red-600 transition hover:bg-red-50"
+                  title="Delete Sub Admin"
+                >
+                  <Trash2 size={17} />
+                </button>
 
               </div>
 
@@ -1003,7 +980,6 @@ const Admins = () => {
         )}
 
       </div>
-
 
       {/* ================================================= */}
       {/* RESET PASSWORD MODAL */}
@@ -1027,16 +1003,18 @@ const Admins = () => {
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
+
                 Reset password for{" "}
+
                 <strong>
                   {
                     resetPasswordAdmin.username
                   }
                 </strong>
+
               </p>
 
             </div>
-
 
             <div className="p-5">
 
@@ -1058,7 +1036,6 @@ const Admins = () => {
               />
 
             </div>
-
 
             <div className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end">
 
@@ -1091,7 +1068,6 @@ const Admins = () => {
 
       )}
 
-
       {/* ================================================= */}
       {/* ACTIVATE / DEACTIVATE CONFIRMATION */}
       {/* ================================================= */}
@@ -1100,40 +1076,57 @@ const Admins = () => {
         open={
           confirmDialog.open
         }
-
         title={
           confirmDialog.action ===
           "activate"
             ? "Activate Sub Admin"
             : "Deactivate Sub Admin"
         }
-
         message={
           confirmDialog.action ===
           "activate"
             ? `Are you sure you want to activate ${confirmDialog.admin?.username}?`
             : `Are you sure you want to deactivate ${confirmDialog.admin?.username}?`
         }
-
         confirmText={
           confirmDialog.action ===
           "activate"
             ? "Activate"
             : "Deactivate"
         }
-
         onCancel={
           closeStatusDialog
         }
-
         onConfirm={
           handleActivateDeactivate
+        }
+      />
+
+      {/* ================================================= */}
+      {/* DELETE CONFIRMATION */}
+      {/* ================================================= */}
+
+      <ConfirmDialog
+        open={
+          deleteDialog.open
+        }
+        title="Delete Sub Admin"
+        message={`Are you sure you want to permanently delete ${deleteDialog.admin?.username}? This action cannot be undone.`}
+        confirmText={
+          deleteLoading
+            ? "Deleting..."
+            : "Delete"
+        }
+        onCancel={
+          closeDeleteDialog
+        }
+        onConfirm={
+          handleDeleteSubAdmin
         }
       />
 
     </div>
   );
 };
-
 
 export default Admins;

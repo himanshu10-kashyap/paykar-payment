@@ -48,7 +48,7 @@ const EditVendor = () => {
         if (!response?.success) {
           throw new Error(
             response?.message ||
-              "Failed to load vendor."
+            "Failed to load vendor."
           );
         }
 
@@ -62,8 +62,8 @@ const EditVendor = () => {
 
         setError(
           err?.response?.data?.message ||
-            err?.message ||
-            "Failed to load vendor."
+          err?.message ||
+          "Failed to load vendor."
         );
       } finally {
         setLoading(false);
@@ -96,7 +96,7 @@ const EditVendor = () => {
       if (!response?.success) {
         throw new Error(
           response?.message ||
-            "Failed to update vendor."
+          "Failed to update vendor."
         );
       }
 
@@ -112,8 +112,8 @@ const EditVendor = () => {
 
       setError(
         err?.response?.data?.message ||
-          err?.message ||
-          "Failed to update vendor."
+        err?.message ||
+        "Failed to update vendor."
       );
     } finally {
       setSaving(false);

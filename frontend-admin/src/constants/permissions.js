@@ -50,14 +50,11 @@ export const PERMISSIONS = {
 
   EDIT_VENDOR: "EDIT_VENDOR",
 
-  ACTIVATE_VENDOR:
-    "ACTIVATE_VENDOR",
+  ACTIVATE_VENDOR: "ACTIVATE_VENDOR",
 
-  DEACTIVATE_VENDOR:
-    "DEACTIVATE_VENDOR",
+  DEACTIVATE_VENDOR: "DEACTIVATE_VENDOR",
 
-  DELETE_VENDOR:
-    "DELETE_VENDOR",
+  DELETE_VENDOR: "DELETE_VENDOR",
 
   VIEW_VENDOR_PAYMENTS:
     "VIEW_VENDOR_PAYMENTS",
@@ -67,11 +64,9 @@ export const PERMISSIONS = {
 export const PERMISSION_LABELS = {
   ALL_ACCESS: "All Access",
 
-  // Dashboard
   VIEW_DASHBOARD:
     "View Dashboard",
 
-  // Payments
   VIEW_PAYMENTS:
     "View Payments",
 
@@ -81,9 +76,8 @@ export const PERMISSION_LABELS = {
   CREATE_PAYMENT:
     "Create Payment",
 
-  // Admins
   VIEW_ADMINS:
-    "View Admins",
+    "View Administrators",
 
   CREATE_SUB_ADMIN:
     "Create Sub Admin",
@@ -106,7 +100,6 @@ export const PERMISSION_LABELS = {
   RESET_SUPER_ADMIN_PASSWORD:
     "Reset Super Admin Password",
 
-  // Vendors
   VIEW_VENDORS:
     "View Vendors",
 
@@ -127,4 +120,41 @@ export const PERMISSION_LABELS = {
 
   VIEW_VENDOR_PAYMENTS:
     "View Vendor Payments",
+};
+
+
+export const ROUTES = {
+  LOGIN: "/login",
+
+  DASHBOARD: "/",
+
+  PAYMENTS: "/payments",
+
+  PAYMENT_DETAILS:
+    "/payments/:id",
+
+  VENDORS: "/vendors",
+
+  CREATE_VENDOR:
+    "/vendors/create",
+
+  EDIT_VENDOR:
+    "/vendors/:id/edit",
+
+  VENDOR_PAYMENTS:
+    "/vendors/:id/payments",
+
+  ADMINS: "/admins",
+
+  CREATE_SUB_ADMIN:
+    "/admins/create",
+
+  EDIT_SUB_ADMIN:
+    "/admins/:id/edit",
+
+  PROFILE: "/profile",
+
+  // NEW
+  VENDOR_ACCESS:
+    "/vendors/:id/access",
 };

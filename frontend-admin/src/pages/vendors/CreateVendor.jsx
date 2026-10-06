@@ -57,7 +57,7 @@ const CreateVendor = () => {
       if (!response?.success) {
         throw new Error(
           response?.message ||
-            "Failed to create vendor."
+          "Failed to create vendor."
         );
       }
 
@@ -73,8 +73,8 @@ const CreateVendor = () => {
 
       setError(
         err?.response?.data?.message ||
-          err?.message ||
-          "Failed to create vendor."
+        err?.message ||
+        "Failed to create vendor."
       );
     } finally {
       setLoading(false);

@@ -23,44 +23,64 @@ import {
 
 import ConfirmDialog from "../common/ConfirmDialog";
 
-
 const Sidebar = () => {
-
   const {
     admin,
     logout,
   } = useAuth();
 
-  const navigate =
-    useNavigate();
-
+  const navigate = useNavigate();
 
   const [
     logoutModalOpen,
     setLogoutModalOpen,
   ] = useState(false);
 
+  const {
+    hasPermission,
+  } = usePermission();
+
+  // ------------------------------------------------
+  // ROLE
+  // ------------------------------------------------
+
+  const normalizedRole = String(
+    admin?.role || ""
+  )
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+
+  const isSubAdmin =
+    normalizedRole === "SUB_ADMIN" ||
+    normalizedRole === "SUBADMIN";
+
+  // ------------------------------------------------
+  // PERMISSIONS
+  // ------------------------------------------------
 
   const canViewPayments =
-    usePermission(
+    hasPermission(
       PERMISSIONS.VIEW_PAYMENTS
     );
 
   const canViewVendors =
-    usePermission(
+    hasPermission(
       PERMISSIONS.VIEW_VENDORS
     );
 
   const canViewAdmins =
-    usePermission(
+    hasPermission(
       PERMISSIONS.VIEW_ADMINS
     );
 
+  // ------------------------------------------------
+  // LOGOUT
+  // ------------------------------------------------
 
   const handleLogout = () => {
     setLogoutModalOpen(true);
   };
-
 
   const confirmLogout = () => {
     setLogoutModalOpen(false);
@@ -72,11 +92,13 @@ const Sidebar = () => {
     });
   };
 
-
   const cancelLogout = () => {
     setLogoutModalOpen(false);
   };
 
+  // ------------------------------------------------
+  // MENU
+  // ------------------------------------------------
 
   const menuItems = [
     {
@@ -90,21 +112,37 @@ const Sidebar = () => {
       label: "Payments",
       path: "/payments",
       icon: CreditCard,
-      show: canViewPayments,
+
+      // --------------------------------------------
+      // IMPORTANT:
+      // Sub Admin should NOT see generic Payments
+      // --------------------------------------------
+
+      show:
+        !isSubAdmin &&
+        canViewPayments,
     },
 
     {
       label: "Vendors",
       path: "/vendors",
       icon: Store,
-      show: canViewVendors,
+
+      // Vendor page is available to Sub Admin.
+      // Backend will return only assigned vendors.
+      show:
+        isSubAdmin
+          ? true
+          : canViewVendors,
     },
 
     {
       label: "Administrators",
       path: "/admins",
       icon: Users,
-      show: canViewAdmins,
+      show:
+        !isSubAdmin &&
+        canViewAdmins,
     },
 
     {
@@ -115,19 +153,15 @@ const Sidebar = () => {
     },
   ];
 
-
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-[270px] border-r border-slate-800 bg-[#020617] lg:block">
-
       <div className="flex h-full flex-col">
-
 
         {/* =================================================
             LOGO
         ================================================== */}
 
         <div className="flex h-[72px] items-center border-b border-slate-800 px-6">
-
           <div className="flex items-center gap-3">
 
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-600/20">
@@ -137,7 +171,6 @@ const Sidebar = () => {
             </div>
 
             <div>
-
               <div className="font-bold tracking-wide text-white">
                 PAYKAR
               </div>
@@ -145,13 +178,10 @@ const Sidebar = () => {
               <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-blue-400">
                 Admin Panel
               </div>
-
             </div>
 
           </div>
-
         </div>
-
 
         {/* =================================================
             NAVIGATION
@@ -163,7 +193,6 @@ const Sidebar = () => {
             Main Menu
           </p>
 
-
           <nav className="space-y-1.5">
 
             {menuItems
@@ -171,7 +200,6 @@ const Sidebar = () => {
                 (item) => item.show
               )
               .map((item) => {
-
                 const Icon =
                   item.icon;
 
@@ -179,9 +207,7 @@ const Sidebar = () => {
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    className={({
-                      isActive,
-                    }) =>
+                    className={({ isActive }) =>
                       [
                         "group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition",
 
@@ -191,31 +217,23 @@ const Sidebar = () => {
                       ].join(" ")
                     }
                   >
-
                     <Icon size={19} />
 
                     <span>
                       {item.label}
                     </span>
-
                   </NavLink>
                 );
-
               })}
 
           </nav>
-
         </div>
-
 
         {/* =================================================
             ADMIN PROFILE + LOGOUT
         ================================================== */}
 
         <div className="border-t border-slate-800 p-4">
-
-
-          {/* Profile */}
 
           <button
             type="button"
@@ -248,7 +266,6 @@ const Sidebar = () => {
 
           </button>
 
-
           {/* Logout */}
 
           <button
@@ -256,7 +273,6 @@ const Sidebar = () => {
             onClick={handleLogout}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-400 transition-all duration-200 hover:bg-red-500/10 hover:text-red-400 active:scale-[0.98]"
           >
-
             <LogOut
               size={18}
               className="shrink-0"
@@ -265,11 +281,9 @@ const Sidebar = () => {
             <span>
               Logout
             </span>
-
           </button>
 
         </div>
-
 
         {/* =================================================
             LOGOUT MODAL
@@ -286,10 +300,8 @@ const Sidebar = () => {
         />
 
       </div>
-
     </aside>
   );
 };
-
 
 export default Sidebar;

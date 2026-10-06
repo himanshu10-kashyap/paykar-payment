@@ -1,41 +1,112 @@
-import { usePermission } from "../../hooks/usePermission";
+import { Navigate } from "react-router-dom";
+
+import AccessDenied from "./AccessDenied";
+
+import {
+  PERMISSIONS,
+} from "../../constants/permissions";
+
+// --------------------------------------------------
+// Get logged-in admin
+// --------------------------------------------------
+
+const getLoggedInAdmin = () => {
+  try {
+
+    const storedAdmin =
+      localStorage.getItem("admin") ||
+      localStorage.getItem("user") ||
+      localStorage.getItem("authUser");
+
+    if (!storedAdmin) {
+      return null;
+    }
+
+    return JSON.parse(storedAdmin);
+  } catch (error) {
+    console.error(
+      "Failed to read logged-in admin:",
+      error
+    );
+
+    return null;
+  }
+};
+
+// --------------------------------------------------
+// Permission Route
+// --------------------------------------------------
 
 const PermissionRoute = ({
   permission,
   children,
+  fallback = null,
 }) => {
-  const {
-    hasPermission,
-  } = usePermission();
+  const admin = getLoggedInAdmin();
 
-  if (!permission) {
-    return children;
-  }
+  // ------------------------------------------------
+  // Not logged in
+  // ------------------------------------------------
 
-  if (
-    !hasPermission(permission)
-  ) {
+  if (!admin) {
     return (
-      <div className="flex min-h-[500px] items-center justify-center rounded-2xl border border-slate-200 bg-white">
-        <div className="px-6 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-2xl font-black text-red-600">
-            403
-          </div>
-
-          <h2 className="mt-5 text-xl font-bold text-slate-900">
-            Access Denied
-          </h2>
-
-          <p className="mt-2 text-sm text-slate-500">
-            You do not have permission
-            to access this page.
-          </p>
-        </div>
-      </div>
+      <Navigate
+        to="/login"
+        replace
+      />
     );
   }
 
-  return children;
+  // ------------------------------------------------
+  // SUPER ADMIN
+  //
+  // Super admin always has access.
+  // ------------------------------------------------
+
+  const isSuperAdmin =
+    String(admin?.role || "").toUpperCase() ===
+    "SUPER_ADMIN";
+
+  if (isSuperAdmin) {
+    return children;
+  }
+
+  // ------------------------------------------------
+  // SUB ADMIN / NORMAL ADMIN
+  // ------------------------------------------------
+
+  const permissions =
+    Array.isArray(admin?.permissions)
+      ? admin.permissions
+      : [];
+
+  const hasPermission =
+    permissions.includes(permission);
+
+  // ------------------------------------------------
+  // Permission exists
+  // ------------------------------------------------
+
+  if (hasPermission) {
+    return children;
+  }
+
+  // ------------------------------------------------
+  // No permission
+  // ------------------------------------------------
+
+  if (fallback) {
+    return fallback;
+  }
+
+  return (
+    <AccessDenied
+      title="Access Restricted"
+      message="You do not have permission to access this page. Please contact your administrator if you need access."
+      showBackButton
+      showDashboardButton={false}
+    />
+  );
 };
 
 export default PermissionRoute;

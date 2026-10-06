@@ -9,6 +9,7 @@ import webhookRoutes from "./routes/webhook.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import vendorRoutes from "./routes/vendor.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import vendorAccessRoutes from "./routes/vendorAccess.routes.js";
 
 const app = express();
 
@@ -91,6 +92,7 @@ app.use("/api/webhooks", webhookRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin/vendors", vendorRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/admin/vendor-access", vendorAccessRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

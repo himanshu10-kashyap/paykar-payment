@@ -51,3 +51,16 @@ export const authenticateAdmin = async (req, res, next) => {
     }
 
 };
+
+export const requireSuperAdmin = (req, res, next) => {
+  const role = req.admin?.role || req.user?.role;
+
+  if (role !== "SUPER_ADMIN") {
+    return res.status(403).json({
+      success: false,
+      message: "Only super admin can perform this action",
+    });
+  }
+
+  next();
+};

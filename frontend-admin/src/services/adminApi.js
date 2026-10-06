@@ -160,3 +160,19 @@ export const editSuperAdmin = async ({
 
   return response.data;
 };
+
+/*
+|--------------------------------------------------------------------------
+| Delete sub admin
+|--------------------------------------------------------------------------
+*/
+
+export const deleteSubAdmin = async (
+  id
+) => {
+  const response = await api.delete(
+    `/api/admin/sub-admin/${id}`
+  );
+
+  return response.data;
+};

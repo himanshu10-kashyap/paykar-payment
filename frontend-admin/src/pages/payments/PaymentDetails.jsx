@@ -14,7 +14,12 @@ import {
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+
+import {
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 
 import { getPaymentById } from "../../services/paymentApi";
 
@@ -22,7 +27,12 @@ import Loader from "../../components/common/Loader";
 
 const PaymentDetails = () => {
   const { id } = useParams();
+
   const navigate = useNavigate();
+
+  const [searchParams] = useSearchParams();
+
+  const fromVendor = searchParams.get("fromVendor");
 
   const [payment, setPayment] =
     useState(null);
@@ -45,6 +55,7 @@ const PaymentDetails = () => {
   const loadPayment = async () => {
     try {
       setLoading(true);
+
       setError("");
 
       const response =
@@ -53,7 +64,7 @@ const PaymentDetails = () => {
       if (!response.success) {
         throw new Error(
           response.message ||
-            "Failed to load payment"
+          "Failed to load payment"
         );
       }
 
@@ -66,8 +77,8 @@ const PaymentDetails = () => {
 
       setError(
         error?.response?.data?.message ||
-          error.message ||
-          "Failed to load payment"
+        error.message ||
+        "Failed to load payment"
       );
     } finally {
       setLoading(false);
@@ -158,7 +169,7 @@ const PaymentDetails = () => {
 
   const getStatusClass = (status) => {
     switch (
-      String(status || "").toUpperCase()
+    String(status || "").toUpperCase()
     ) {
       case "SUCCESS":
       case "COMPLETED":
@@ -226,14 +237,22 @@ const PaymentDetails = () => {
       <div className="space-y-5">
         <button
           type="button"
-          onClick={() =>
-            navigate("/payments")
-          }
+          onClick={() => {
+            if (fromVendor) {
+              navigate(
+                `/vendors/${fromVendor}/payments`
+              );
+            } else {
+              navigate("/payments");
+            }
+          }}
           className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-blue-600"
         >
           <ArrowLeft size={17} />
 
-          Back to Payments
+          {fromVendor
+            ? "Back to Vendor Payments"
+            : "Back to Payments"}
         </button>
 
         <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
@@ -280,27 +299,41 @@ const PaymentDetails = () => {
       {/* Header */}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
+        <div className="flex items-start gap-3">
+          {/* Back Button */}
+
           <button
             type="button"
-            onClick={() =>
-              navigate("/payments")
+            onClick={() => {
+              if (fromVendor) {
+                navigate(
+                  `/vendors/${fromVendor}/payments`
+                );
+              } else {
+                navigate("/payments");
+              }
+            }}
+            className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
+            title={
+              fromVendor
+                ? "Back to Vendor Payments"
+                : "Back to Payments"
             }
-            className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-blue-600"
           >
-            <ArrowLeft size={17} />
-
-            Back to Payments
+            <ArrowLeft size={18} />
           </button>
 
-          <h1 className="text-2xl font-bold text-slate-900">
-            Payment Details
-          </h1>
+          {/* Title */}
 
-          <p className="mt-1 text-sm text-slate-500">
-            Complete payment and gateway
-            transaction information.
-          </p>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">
+              Payment Details
+            </h1>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Complete payment and gateway transaction information.
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -309,8 +342,7 @@ const PaymentDetails = () => {
               payment.status
             )}`}
           >
-            {payment.status ||
-              "UNKNOWN"}
+            {payment.status || "UNKNOWN"}
           </span>
         </div>
       </div>
@@ -394,7 +426,7 @@ const PaymentDetails = () => {
           <p className="mt-1 text-sm font-bold text-slate-900">
             {formatDate(
               payment.createdAt ||
-                payment.created_at
+              payment.created_at
             )}
           </p>
         </div>
@@ -512,7 +544,9 @@ const PaymentDetails = () => {
 
       <Section
         title="Vendor Information"
-        icon={<WalletCards size={19} />}
+        icon={
+          <WalletCards size={19} />
+        }
       >
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
           <DetailItem
@@ -623,9 +657,7 @@ const PaymentDetails = () => {
 
           <UrlItem
             label="IPN / Webhook URL"
-            value={
-              payment.ipnUrl
-            }
+            value={payment.ipnUrl}
           />
         </div>
       </Section>
@@ -641,7 +673,7 @@ const PaymentDetails = () => {
             label="Created At"
             value={formatDate(
               payment.createdAt ||
-                payment.created_at
+              payment.created_at
             )}
           />
 
@@ -649,7 +681,7 @@ const PaymentDetails = () => {
             label="Updated At"
             value={formatDate(
               payment.updatedAt ||
-                payment.updated_at
+              payment.updated_at
             )}
           />
 
@@ -657,7 +689,7 @@ const PaymentDetails = () => {
             label="Paid At"
             value={formatDate(
               payment.paidAt ||
-                payment.paid_at
+              payment.paid_at
             )}
           />
 
@@ -665,7 +697,7 @@ const PaymentDetails = () => {
             label="Webhook Received At"
             value={formatDate(
               payment.webhookReceivedAt ||
-                payment.webhook_received_at
+              payment.webhook_received_at
             )}
           />
 
@@ -753,7 +785,7 @@ const PaymentDetails = () => {
                 <Copy size={14} />
 
                 {copied ===
-                "webhookPayload"
+                  "webhookPayload"
                   ? "Copied"
                   : "Copy"}
               </button>
@@ -855,8 +887,8 @@ const DetailItem = ({
 }) => {
   const displayValue =
     value === null ||
-    value === undefined ||
-    value === ""
+      value === undefined ||
+      value === ""
       ? "-"
       : String(value);
 
@@ -972,7 +1004,9 @@ const JsonSection = ({
   return (
     <Section
       title={title}
-      icon={<FileJson size={19} />}
+      icon={
+        <FileJson size={19} />
+      }
     >
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-950">
         <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
